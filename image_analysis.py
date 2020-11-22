@@ -74,7 +74,7 @@ def extend(array, new_shape=(960,1600)):
 
 def subtract_mean(arrays, mean_array):
     '''
-    Finds the proper bias for the preprocessing process
+    Smart subtraction of the mean to avoid overflow
     '''    
     diffs = np.array([array*1. - mean_array for array in arrays])
     m = np.min(diffs)
@@ -91,16 +91,19 @@ def subtract_mean(arrays, mean_array):
     return np.array(arrays_sub, dtype=np.uint8)
     
 
-def preprocess(array_sub,rotation=35,filter_size=0):
+def preprocess(array_sub,rotation=35,filter_size=0, new_shape=(960,1600)):
     '''
     Rotates the image by 'rotation' degrees and then applies a gaussain filter
     if 'filter_size' > 1
     
+    if 'new_shape' == (0,0): the new_shape is automatically computed
+    
     returns the preprocessed image
     '''
     
-    old_shape = array_sub.shape
-    new_shape = (old_shape[0], int(np.sqrt(old_shape[0]**2 + old_shape[1]**2)))
+    if new_shape == (0,0):
+        old_shape = array_sub.shape
+        new_shape = (old_shape[0], int(np.sqrt(old_shape[0]**2 + old_shape[1]**2)))
     
     img = Image.fromarray(extend(array_sub,new_shape)).rotate(rotation)
     
