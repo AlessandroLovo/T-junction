@@ -1,0 +1,21 @@
+Verbale 2020/11/20
+
+Issues
+Segnali calano in voltaggio 
+
+1) Ipotesi 1: vibrazione motore pompe che fa allentare la fibra ottica che spostandosi determina un segnale minore. Tuttavia ci sono segnali che vanno giù ma poi risalgono e quindi parebbe da scartare questa ipotesi. 
+2) Ipotesi 2: avendo visto che l'ambiente influenza il segnale del fotodiodo, il calo nella tensione potrebbe essere dovuta a dimnuzioni della luminosità ambientale. A rafforzare questa ipotesi abbiamo notato che la giunzione stampata in materiale trasparente ha una pendenza solitamente maggiore della giunzione stampata in materiale opaco.
+
+
+Prossime mosse strategiche yoh:
+1. Provare con fit parabolico.
+2. Provare con trasformata di Fourier, filtrare le frequenze basse, e antitrasformare. 
+3. Andamento luminosità in funzione della posizione nel capillare per le immagini.
+
+
+Scopi: 
+1. Confronto velocità gocce tra differenziale con le due giunzioni, telecamere e pompe. 
+2. Misura delle dimensioni delle gocce in funzioni dei vari flussi. 
+3. Simulare effeto strobo.
+4. Stimare qualitativamente l'effetto ambientale (issue all'inizio).
+5. Analisi del comportamento anomale delle gocce in aria.  
