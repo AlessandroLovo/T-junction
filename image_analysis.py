@@ -19,10 +19,14 @@ def extract_frames(path,video_name):
     Splits the video in its frames and moves video and frame to a folder named as the video
     '''
     path = path.rstrip('/')
+    fol = path + '/' + video_name.rsplit('.',1)[0]
+    
+    if os.path.exists(fol):
+        print('Frames already extracted :)')
+        return
     if not os.path.exists(path + '/' + video_name):
         raise FileNotFoundError('No such file or directory')
     
-    fol = path + '/' + video_name.rsplit('.',1)[0]
     os.mkdir(fol)
     cur_dir = os.getcwd()
     os.replace(path + '/' + video_name, fol + '/' + video_name)
@@ -72,7 +76,7 @@ def extend(array, new_shape=(960,1600)):
     new_array[offset_x:(offset_x + array.shape[0]), offset_y:(offset_y + array.shape[1])] = array
     return new_array
 
-def subtract_mean(arrays, mean_array):
+def subtract_mean(arrays, mean_array, negative=False):
     '''
     Smart subtraction of the mean to avoid overflow
     '''    
@@ -87,8 +91,13 @@ def subtract_mean(arrays, mean_array):
         o = input('Rescale arrays to avoid overflow? [y/n] ')
         if o == 'y':
             arrays_sub *= (255/(M - m))
+            
+    arrays_sub = np.array(arrays_sub, dtype=np.uint8)
+    
+    if negative:
+        arrays_sub = 255 - arrays_sub
         
-    return np.array(arrays_sub, dtype=np.uint8)
+    return arrays_sub
     
 
 def preprocess(array_sub,rotation=35,filter_size=0, new_shape=(960,1600)):
@@ -107,7 +116,7 @@ def preprocess(array_sub,rotation=35,filter_size=0, new_shape=(960,1600)):
     
     img = Image.fromarray(extend(array_sub,new_shape)).rotate(rotation)
     
-    if filter_size > 1:
+    if filter_size != 0:
         img = Image.fromarray(ndimage.gaussian_filter(img,filter_size))
         
     return img

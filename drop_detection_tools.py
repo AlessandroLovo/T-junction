@@ -92,14 +92,18 @@ def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True,
             Xdata = np.arange(len(Ydata))
         
         axes[1].plot(Xdata, Ydata, color='green')
-        axes[1].plot(thr_high*np.ones(len(Xdata)), color='red')
-        axes[1].plot(thr_low *np.ones(len(Xdata)), color='red')
+        axes[1].plot(thr_high*np.ones(len(Xdata)), color='yellow', label='thr_high')
+        axes[1].plot(thr_low *np.ones(len(Xdata)), color='blue', label='thr_low')
+        plt.legend()
         plt.xlim((0, Xdata[len(Xdata)-1]))
         if not (ymin is None or ymax is None):
             axes[1].set_ylim(ymin, ymax)
         axes[1].set_title("Signal with thresholds")
         axes[1].set_xlabel("Position [mm]")
-        axes[1].set_ylabel("Luminosity") 
+        axes[1].set_ylabel("Luminosity")
+        
+    if thr_low > thr_high:
+        print('WARNING: thr_low > thr_high')
     
     return thr_low, thr_high
 
@@ -176,7 +180,7 @@ def drop_det(Xdata, Ydata, thr_low, thr_high, plot_switch=True, ymin=None, ymax=
             plt.xlabel("Position [mm]")
             plt.xlim(j*xrange,(j+1)*xrange)
             plt.plot(thr_high*np.ones(len(Xdata)), color='yellow')
-            plt.plot(thr_low *np.ones(len(Xdata)), color='yellow')
+            plt.plot(thr_low *np.ones(len(Xdata)), color='blue')
             plt.show()
         
     return drop_start, drop_end
