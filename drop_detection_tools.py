@@ -1,10 +1,89 @@
 import numpy as np
-#import pandas as pd
+import csv
+import pandas as pd
 #from PIL import Image
 import matplotlib.pyplot as plt
 #import os
 from tqdm import tqdm
 from lmfit.models import GaussianModel
+
+
+
+# READ CSV FILE OUTPUTTED BY LABVIEW
+def read_LV(folder, filename, plot_switch=True):
+    sig1=[]
+    sig2=[]
+    t = []
+    
+    folder.rstrip('/') + '/'
+    
+    # Data acquisition 
+    with open(folder + filename) as data:
+        for sig in csv.reader(data, delimiter='	'):
+            #print(sig)
+            sig[0] = sig[0].replace('.','').replace(',','.')
+            sig[1] = sig[1].replace('.','').replace(',','.')
+            sig[2] = sig[2].replace('.','').replace(',','.')
+            #print(sig)
+            sig1.append(float(sig[0]))
+            sig2.append(float(sig[1]))
+            t.append(float(sig[2]))
+    sig1 = np.array(sig1)
+    sig1 = sig1[0:-1]
+    sig2 = np.array(sig2)
+    sig2 = sig2[0:-1]
+    t = np.array(t)
+    t = t[0:-1]        
+    
+    if plot_switch:
+        # Plot signal 1
+        plt.figure()
+        plt.figure(figsize=(20,4))
+        plt.title('Signal 1')
+        plt.xlabel("Time [s]")
+        plt.ylabel("Voltage [V]")
+        plt.plot(t, sig1, color='blue')
+        plt.show()
+        
+        # Plot signal 2
+        plt.figure()
+        plt.figure(figsize=(20,4))
+        plt.title('Signal 2')
+        plt.xlabel("Time [s]")
+        plt.ylabel("Voltage [V]")
+        plt.plot(t, sig2, color='green')
+        plt.show()
+    
+    return sig1, sig2, t
+
+# The function does the Fast Fourier Transformation (FFT) and filters the signal keeping the frequency in [min_freq; max_freq]. 
+# Then the function returns the anti-transformed filtered signal.
+def FFT_cropping(signal, min_freq, max_freq, plot_switch=True):
+    
+    # FFT of signal 
+    F_sig = np.fft.fft(signal)                            
+
+    if plot_switch:
+        # FFT signal plot
+        fig, axes = plt.subplots(nrows=1, ncols=1)
+        axes.set_xlabel('Frequency')
+        axes.plot(F_sig, label='FFT')
+        axes.set_ylim(0,200)
+
+    # Signal filtering
+    F_sig_crop       = np.zeros(len(F_sig))
+    F_sig[:min_freq] = F_sig_crop[:min_freq]     # Set to 0 F_sig below min_freq
+    F_sig[max_freq:] = F_sig_crop[max_freq:]     # Set to 0 F_sig above max_freq
+
+    if plot_switch:
+        # FFT signal filtered plot
+        axes.plot(F_sig, label='FFT cropped')
+        axes.legend()
+
+    # Anti-FFT of F_sig
+    sig_high = np.fft.ifft(F_sig).real
+    
+    return sig_high
 
 
 # THRESHOLDS SEARCHING FUNCTION :::::::::::::::::::::::::::::::
