@@ -87,7 +87,7 @@ def FFT_cropping(signal, min_freq, max_freq, plot_switch=True):
 
 
 # THRESHOLDS SEARCHING FUNCTION :::::::::::::::::::::::::::::::
-def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True, Xdata=None, ymin=None, ymax=None):
+def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True, Xdata=None, ymin=None, ymax=None, **kwargs):
     
     '''
     Description:
@@ -106,9 +106,18 @@ def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True,
         thr_low, thr_high
     '''
     
+    xlabel = kwargs.pop('xlabel',None)
+    ylabel = kwargs.pop('ylabel',None)
+    
+    if xlabel is None:
+        xlabel = 'position [mm]'
+    if ylabel is None:
+        ylabel = 'luminosity'
+    
     # Histogram definition
     freq,bins,p = plt.hist(Ydata, nbins, color='green')
-    x = 0.5 *(bins[:-1] + bins[1:])                                          
+    x = 0.5 *(bins[:-1] + bins[1:])
+    max_freq = np.max(freq)                                     
         
     # Gaussian 1
     gauss1 = GaussianModel(prefix='g1_')
@@ -138,13 +147,16 @@ def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True,
         fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(15, 5))
         
         # Plot histo
-        axes[0].hist(Ydata, nbins, color='green')
+        axes[0].hist(Ydata, nbins, **kwargs)
         axes[0].plot(x, out.init_fit, 'k--', label='initial fit')
         axes[0].plot(x, out.best_fit, 'r-', label='best fit')
         axes[0].legend(loc='best')
         axes[0].set_title("Signal histogram")
-        axes[0].set_xlabel("Luminosity")
-        axes[0].set_ylabel("Number of events") 
+        axes[0].set_xlabel(ylabel)
+        axes[0].set_ylabel("Number of events")
+        
+        if axes[0].get_ylim()[1] > 1.5*max_freq:
+            axes[0].set_ylim(0,1.5*max_freq)
 
     center2 = out.best_values.get('g2_center')
     sigma2  = out.best_values.get('g2_sigma')
@@ -167,19 +179,22 @@ def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True,
     
     # Signal plot
     if plot_switch:
+        axes[0].vlines([thr_low], *axes[0].get_ylim(), color='cyan')
+        axes[0].vlines([thr_high], *axes[0].get_ylim(), color='yellow')
+        
         if Xdata is None:
             Xdata = np.arange(len(Ydata))
         
-        axes[1].plot(Xdata, Ydata, color='green')
+        axes[1].plot(Xdata, Ydata, **kwargs)
         axes[1].plot(thr_high*np.ones(len(Xdata)), color='yellow', label='thr_high')
-        axes[1].plot(thr_low *np.ones(len(Xdata)), color='blue', label='thr_low')
+        axes[1].plot(thr_low *np.ones(len(Xdata)), color='cyan', label='thr_low')
         plt.legend()
         plt.xlim((0, Xdata[len(Xdata)-1]))
         if not (ymin is None or ymax is None):
             axes[1].set_ylim(ymin, ymax)
         axes[1].set_title("Signal with thresholds")
-        axes[1].set_xlabel("Position [mm]")
-        axes[1].set_ylabel("Luminosity")
+        axes[1].set_xlabel(xlabel)
+        axes[1].set_ylabel(ylabel)
         
     if thr_low > thr_high:
         print('WARNING: thr_low > thr_high')
@@ -188,7 +203,7 @@ def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True,
 
 
 # DROP DETECTION FUNCTION :::::::::::::::::::::::::::::::::::::::::::::::::::
-def drop_det(Xdata, Ydata, thr_low, thr_high, plot_switch=True, ymin=None, ymax=None, xrange=None):
+def drop_det(Xdata, Ydata, thr_low, thr_high, plot_switch=True, ymin=None, ymax=None, xrange=None, **kwargs):
     
     '''
     Description:
@@ -243,7 +258,7 @@ def drop_det(Xdata, Ydata, thr_low, thr_high, plot_switch=True, ymin=None, ymax=
             xrange = Xdata[-1]
         for j in range(int (Xdata[-1]/xrange)):
             fig, ax = plt.subplots(figsize=(20,4))
-            plt.plot(Xdata, Ydata)
+            plt.plot(Xdata, Ydata, **kwargs)
             
             if ymin is None or ymax is None:
                 ymin, ymax = ax.get_ylim()
@@ -259,7 +274,7 @@ def drop_det(Xdata, Ydata, thr_low, thr_high, plot_switch=True, ymin=None, ymax=
             plt.xlabel("Position [mm]")
             plt.xlim(j*xrange,(j+1)*xrange)
             plt.plot(thr_high*np.ones(len(Xdata)), color='yellow')
-            plt.plot(thr_low *np.ones(len(Xdata)), color='blue')
+            plt.plot(thr_low *np.ones(len(Xdata)), color='cyan')
             plt.show()
         
-    return drop_start, drop_end
+    return np.array(drop_start), np.array(drop_end)
