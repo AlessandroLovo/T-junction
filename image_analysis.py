@@ -146,6 +146,12 @@ class Channel_analyzer():
         self._c_constant = None
         self.c_points = []
         
+        # variables for manual disance measuring
+        self.d_points = []
+        self.d_current_index = 0
+        self.d_points_on_ax = None
+        self.d_highlight_on_ax = None
+        
         # variables for plotting
         self.c_points_on_ax = None
         self.c_highlight_on_ax = None
@@ -390,6 +396,124 @@ class Channel_analyzer():
         cid = fig.canvas.mpl_connect('button_press_event', onclick)
         cid2 = fig.canvas.mpl_connect('key_press_event', onpress)
         
+    def measure_distance(self,img):
+        '''
+        Allows to measure the distance in mm between two points
+        
+        Input:
+            img: image on the same scale as the one used for calibration
+            
+        Requirements:
+            You need to have %matplotlib notebook
+            The object must have been previously calibrated
+            
+        Controls:
+            Right click to add a point to the image. The selected one is highlighted in red
+            Press:
+                f: select next point
+                z: remove selected point
+                a, w, d, x: move selected point
+                u: update the positions of the points
+                
+                o: zoom on image
+                c: go back to previous view
+                v: go forward to next view
+                p: move the field of view in a zoomed view
+                
+                q: stop the interaction with the figure
+        '''
+        try:
+            _ = self.c_constant
+        except IndexError:
+            raise ValueError('Object must be calibrated to use this method')
+        
+        fig, ax = plt.subplots()
+        ax.imshow(img)
+        
+        def scatter_points():
+            p = np.array(self.d_points)
+            if len(self.d_points) == 2:
+                pixel_distance = np.sqrt((self.d_points[0][0] - self.d_points[1][0])**2 +
+                                          (self.d_points[0][1] - self.d_points[1][1])**2)
+                ax.set_title(f'distance = {self.c_constant*pixel_distance : .4f} mm')
+            return ax.scatter(p[:,0],p[:,1],
+                              marker='+',color='yellow')
+        def highlight_point():
+            return ax.scatter(self.d_points[self.d_current_index][0],self.d_points[self.d_current_index][1],
+                              marker='+',color='red')
+        
+        def remove(obj):
+            ax.set_title('')
+            if obj:
+                if obj.axes:
+                    obj.remove()
+        
+        def onclick(event):
+            
+            if len(self.d_points) < 2:
+                # works with right click
+                if event.button == 3:
+                    ix = int(event.xdata)
+                    iy = int(event.ydata)
+
+                    self.d_points.append([ix,iy])
+
+                    #clear previous plots
+                    remove(self.d_points_on_ax)
+                    remove(self.d_highlight_on_ax)
+                    self.d_points_on_ax = scatter_points()
+                    self.d_current_index = len(self.d_points) - 1
+                    self.d_highlight_on_ax = highlight_point()
+            
+        def onpress(event):
+            
+            # scroll points
+            if event.key == 'f':
+                self.d_current_index = (self.d_current_index + 1) % len(self.d_points)
+                remove(self.d_highlight_on_ax)
+                self.d_highlight_on_ax = highlight_point()
+            
+            # remove a point
+            if event.key == 'z':
+                remove(self.d_points_on_ax)
+                remove(self.d_highlight_on_ax)
+                _ = self.d_points.pop(self.d_current_index)
+                self.d_points_on_ax = scatter_points()
+                
+            # move a point
+                # left
+            if event.key == 'a':
+                remove(self.d_highlight_on_ax)
+                self.d_points[self.d_current_index][0] -= 1
+                self.d_highlight_on_ax = highlight_point()
+                
+                # right
+            if event.key == 'd':
+                remove(self.d_highlight_on_ax)
+                self.d_points[self.d_current_index][0] += 1
+                self.d_highlight_on_ax = highlight_point()
+            
+                # up
+            if event.key == 'w':
+                remove(self.d_highlight_on_ax)
+                self.d_points[self.d_current_index][1] -= 1
+                self.d_highlight_on_ax = highlight_point()
+            
+                # down
+            if event.key == 'x':
+                remove(self.d_highlight_on_ax)
+                self.d_points[self.d_current_index][1] += 1
+                self.d_highlight_on_ax = highlight_point()
+                
+            # update the points positions
+            if event.key == 'u':
+                remove(self.d_points_on_ax)
+                self.d_points_on_ax = scatter_points()               
+                
+        cid = fig.canvas.mpl_connect('button_press_event', onclick)
+        cid2 = fig.canvas.mpl_connect('key_press_event', onpress)
+        
+    
     def find_channel(self,img):
         '''
         Allows to isolate the channel from the rest of the image
