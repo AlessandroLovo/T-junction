@@ -1,5 +1,6 @@
 import numpy as np
-#import pandas as pd
+import csv
+import pandas as pd
 #from PIL import Image
 import matplotlib.pyplot as plt
 #import os
@@ -7,8 +8,86 @@ from tqdm import tqdm
 from lmfit.models import GaussianModel
 
 
+
+# READ CSV FILE OUTPUTTED BY LABVIEW
+def read_LV(folder, filename, plot_switch=True):
+    sig1=[]
+    sig2=[]
+    t = []
+    
+    folder.rstrip('/') + '/'
+    
+    # Data acquisition 
+    with open(folder + filename) as data:
+        for sig in csv.reader(data, delimiter='	'):
+            #print(sig)
+            sig[0] = sig[0].replace('.','').replace(',','.')
+            sig[1] = sig[1].replace('.','').replace(',','.')
+            sig[2] = sig[2].replace('.','').replace(',','.')
+            #print(sig)
+            sig1.append(float(sig[0]))
+            sig2.append(float(sig[1]))
+            t.append(float(sig[2]))
+    sig1 = np.array(sig1)
+    sig1 = sig1[0:-1]
+    sig2 = np.array(sig2)
+    sig2 = sig2[0:-1]
+    t = np.array(t)
+    t = t[0:-1]        
+    
+    if plot_switch:
+        # Plot signal 1
+        plt.figure()
+        plt.figure(figsize=(20,4))
+        plt.title('Signal 1')
+        plt.xlabel("Time [s]")
+        plt.ylabel("Voltage [V]")
+        plt.plot(t, sig1, color='blue')
+        plt.show()
+        
+        # Plot signal 2
+        plt.figure()
+        plt.figure(figsize=(20,4))
+        plt.title('Signal 2')
+        plt.xlabel("Time [s]")
+        plt.ylabel("Voltage [V]")
+        plt.plot(t, sig2, color='green')
+        plt.show()
+    
+    return sig1, sig2, t
+
+# The function does the Fast Fourier Transformation (FFT) and filters the signal keeping the frequency in [min_freq; max_freq]. 
+# Then the function returns the anti-transformed filtered signal.
+def FFT_cropping(signal, min_freq, max_freq, plot_switch=True):
+    
+    # FFT of signal 
+    F_sig = np.fft.fft(signal)                            
+
+    if plot_switch:
+        # FFT signal plot
+        fig, axes = plt.subplots(nrows=1, ncols=1)
+        axes.set_xlabel('Frequency')
+        axes.plot(F_sig, label='FFT')
+        axes.set_ylim(0,200)
+
+    # Signal filtering
+    F_sig_crop       = np.zeros(len(F_sig))
+    F_sig[:min_freq] = F_sig_crop[:min_freq]     # Set to 0 F_sig below min_freq
+    F_sig[max_freq:] = F_sig_crop[max_freq:]     # Set to 0 F_sig above max_freq
+
+    if plot_switch:
+        # FFT signal filtered plot
+        axes.plot(F_sig, label='FFT cropped')
+        axes.legend()
+
+    # Anti-FFT of F_sig
+    sig_high = np.fft.ifft(F_sig).real
+    
+    return sig_high
+
+
 # THRESHOLDS SEARCHING FUNCTION :::::::::::::::::::::::::::::::
-def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True, Xdata=None, ymin=None, ymax=None):
+def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True, Xdata=None, ymin=None, ymax=None, **kwargs):
     
     '''
     Description:
@@ -27,9 +106,18 @@ def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True,
         thr_low, thr_high
     '''
     
+    xlabel = kwargs.pop('xlabel',None)
+    ylabel = kwargs.pop('ylabel',None)
+    
+    if xlabel is None:
+        xlabel = 'position [mm]'
+    if ylabel is None:
+        ylabel = 'luminosity'
+    
     # Histogram definition
     freq,bins,p = plt.hist(Ydata, nbins, color='green')
-    x = 0.5 *(bins[:-1] + bins[1:])                                          
+    x = 0.5 *(bins[:-1] + bins[1:])
+    max_freq = np.max(freq)                                     
         
     # Gaussian 1
     gauss1 = GaussianModel(prefix='g1_')
@@ -59,13 +147,16 @@ def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True,
         fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(15, 5))
         
         # Plot histo
-        axes[0].hist(Ydata, nbins, color='green')
+        axes[0].hist(Ydata, nbins, **kwargs)
         axes[0].plot(x, out.init_fit, 'k--', label='initial fit')
         axes[0].plot(x, out.best_fit, 'r-', label='best fit')
         axes[0].legend(loc='best')
         axes[0].set_title("Signal histogram")
-        axes[0].set_xlabel("Luminosity")
-        axes[0].set_ylabel("Number of events") 
+        axes[0].set_xlabel(ylabel)
+        axes[0].set_ylabel("Number of events")
+        
+        if axes[0].get_ylim()[1] > 1.5*max_freq:
+            axes[0].set_ylim(0,1.5*max_freq)
 
     center2 = out.best_values.get('g2_center')
     sigma2  = out.best_values.get('g2_sigma')
@@ -88,19 +179,22 @@ def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True,
     
     # Signal plot
     if plot_switch:
+        axes[0].vlines([thr_low], *axes[0].get_ylim(), color='cyan')
+        axes[0].vlines([thr_high], *axes[0].get_ylim(), color='yellow')
+        
         if Xdata is None:
             Xdata = np.arange(len(Ydata))
         
-        axes[1].plot(Xdata, Ydata, color='green')
+        axes[1].plot(Xdata, Ydata, **kwargs)
         axes[1].plot(thr_high*np.ones(len(Xdata)), color='yellow', label='thr_high')
-        axes[1].plot(thr_low *np.ones(len(Xdata)), color='blue', label='thr_low')
+        axes[1].plot(thr_low *np.ones(len(Xdata)), color='cyan', label='thr_low')
         plt.legend()
         plt.xlim((0, Xdata[len(Xdata)-1]))
         if not (ymin is None or ymax is None):
             axes[1].set_ylim(ymin, ymax)
         axes[1].set_title("Signal with thresholds")
-        axes[1].set_xlabel("Position [mm]")
-        axes[1].set_ylabel("Luminosity")
+        axes[1].set_xlabel(xlabel)
+        axes[1].set_ylabel(ylabel)
         
     if thr_low > thr_high:
         print('WARNING: thr_low > thr_high')
@@ -109,7 +203,7 @@ def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True,
 
 
 # DROP DETECTION FUNCTION :::::::::::::::::::::::::::::::::::::::::::::::::::
-def drop_det(Xdata, Ydata, thr_low, thr_high, plot_switch=True, ymin=None, ymax=None, xrange=None):
+def drop_det(Xdata, Ydata, thr_low, thr_high, plot_switch=True, ymin=None, ymax=None, xrange=None, **kwargs):
     
     '''
     Description:
@@ -164,7 +258,7 @@ def drop_det(Xdata, Ydata, thr_low, thr_high, plot_switch=True, ymin=None, ymax=
             xrange = Xdata[-1]
         for j in range(int (Xdata[-1]/xrange)):
             fig, ax = plt.subplots(figsize=(20,4))
-            plt.plot(Xdata, Ydata)
+            plt.plot(Xdata, Ydata, **kwargs)
             
             if ymin is None or ymax is None:
                 ymin, ymax = ax.get_ylim()
@@ -180,7 +274,7 @@ def drop_det(Xdata, Ydata, thr_low, thr_high, plot_switch=True, ymin=None, ymax=
             plt.xlabel("Position [mm]")
             plt.xlim(j*xrange,(j+1)*xrange)
             plt.plot(thr_high*np.ones(len(Xdata)), color='yellow')
-            plt.plot(thr_low *np.ones(len(Xdata)), color='blue')
+            plt.plot(thr_low *np.ones(len(Xdata)), color='cyan')
             plt.show()
         
-    return drop_start, drop_end
+    return np.array(drop_start), np.array(drop_end)
