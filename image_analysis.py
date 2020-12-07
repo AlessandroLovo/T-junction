@@ -37,7 +37,7 @@ def extract_frames(path,video_name):
     os.chdir(cur_dir)
     return fol
     
-def get_arrays(folder,color=1,max_frames=600, start_frame_idx=0):
+def get_arrays(folder,color=1,max_frames=None, start_frame_idx=0):
     '''
     Read the frames in 'folder' and compute their mean.
     For memory reasons only one of the r,g,b channels needs to be selected with the variable 'color': respectively 0,1,2
@@ -51,6 +51,8 @@ def get_arrays(folder,color=1,max_frames=600, start_frame_idx=0):
     images = []
     names = np.sort(os.listdir(folder))
     i = 0
+    if max_frames is None:
+        max_frames = len(names)
     for name in names:
         if i >= start_frame_idx:
             if name.startswith('frames'):
@@ -83,13 +85,21 @@ def extend(array, new_shape=(960,1600)):
     new_array[offset_x:(offset_x + array.shape[0]), offset_y:(offset_y + array.shape[1])] = array
     return new_array
 
-def subtract_mean(arrays, mean_array, negative=False):
+def subtract_mean(arrays, mean_array, negative=False, batch_size=100):
     '''
     Smart subtraction of the mean to avoid overflow
-    '''    
-    diffs = np.array([array*1. - mean_array for array in arrays])
-    m = np.min(diffs)
-    M = np.max(diffs)
+    '''
+    diffs = []
+    m = 255
+    M = -255
+    for i in range(len(arrays)//batch_size + 1):
+        print(f'batch {i}')
+        partial = np.array([array*1. - mean_array for array in arrays[i*batch_size : (i + 1)*batch_size]])
+        if len(partial):
+            m = min(m, np.min(partial))
+            M = max(M, np.max(partial))
+            diffs.append(partial)
+    diffs = np.concatenate(diffs)
     print(f'm = {m}, M = {M}')
     arrays_sub = diffs - m
     
