@@ -23,7 +23,7 @@ def extract_frames(path,video_name):
     
     if os.path.exists(fol):
         print('Frames already extracted :)')
-        return
+        return fol
     if not os.path.exists(path + '/' + video_name):
         raise FileNotFoundError('No such file or directory')
     
@@ -32,10 +32,10 @@ def extract_frames(path,video_name):
     os.replace(path + '/' + video_name, fol + '/' + video_name)
     
     os.chdir(fol)
-    os.system(f'ffmpeg -i {video_name} frames_%03d.jpg')
+    os.system(f'ffmpeg -i {video_name} frames_%04d.jpg')
     
     os.chdir(cur_dir)
-    
+    return fol
     
 def get_arrays(folder,color=1,max_frames=600, start_frame_idx=0):
     '''
@@ -50,11 +50,13 @@ def get_arrays(folder,color=1,max_frames=600, start_frame_idx=0):
     folder = folder.rstrip('/')
     images = []
     names = np.sort(os.listdir(folder))
-    for i,name in enumerate(names):
+    i = 0
+    for name in names:
         if i >= start_frame_idx:
             if name.startswith('frames'):
                 images.append(Image.open(folder + '/' + name))
-        if len(images) >= max_frames:
+                i += 1
+        if i >= max_frames:
             print(f'Too many frames to analyze: stopping at frame {max_frames}')
             break
             
