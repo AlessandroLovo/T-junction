@@ -37,10 +37,11 @@ def extract_frames(path,video_name):
     os.chdir(cur_dir)
     
     
-def get_arrays(folder,color=1):
+def get_arrays(folder,color=1,max_frames=600, start_frame_idx=0):
     '''
     Read the frames in 'folder' and compute their mean.
     For memory reasons only one of the r,g,b channels needs to be selected with the variable 'color': respectively 0,1,2
+    and also a maximum of 1000 frames can be processed at once. This maximum can be tweaked changing 'max_frames'
     
     Returns:
         arrays: array of frames as 2d arrays
@@ -49,9 +50,13 @@ def get_arrays(folder,color=1):
     folder = folder.rstrip('/')
     images = []
     names = np.sort(os.listdir(folder))
-    for name in names:
-        if name.startswith('frames'):
-            images.append(Image.open(folder + '/' + name))
+    for i,name in enumerate(names):
+        if i >= start_frame_idx:
+            if name.startswith('frames'):
+                images.append(Image.open(folder + '/' + name))
+        if len(images) >= max_frames:
+            print(f'Too many frames to analyze: stopping at frame {max_frames}')
+            break
             
     arrays = np.array([np.asarray(image)[:,:,color] for image in images])
     

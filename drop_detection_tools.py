@@ -11,6 +11,12 @@ from lmfit.models import GaussianModel
 
 # READ CSV FILE OUTPUTTED BY LABVIEW
 def read_LV(folder, filename, plot_switch=True):
+    '''
+    Reads a csv file outputted by LabView
+    
+    Returns:
+        sig1, sig2, t
+    '''
     sig1=[]
     sig2=[]
     t = []
