@@ -41,7 +41,7 @@ def get_arrays(folder,color=1,max_frames=None, start_frame_idx=0):
     '''
     Read the frames in 'folder' and compute their mean.
     For memory reasons only one of the r,g,b channels needs to be selected with the variable 'color': respectively 0,1,2
-    and also a maximum of 1000 frames can be processed at once. This maximum can be tweaked changing 'max_frames'
+    'max_frames' is the maximum number of frames to analyze, by default all in the directory
     
     Returns:
         arrays: array of frames as 2d arrays
@@ -54,13 +54,14 @@ def get_arrays(folder,color=1,max_frames=None, start_frame_idx=0):
     if max_frames is None:
         max_frames = len(names)
     for name in names:
-        if i >= start_frame_idx:
-            if name.startswith('frames'):
+        if name.startswith('frames'):
+            frame_idx = name.split('.')[0].split('_')[1]
+            if int(frame_idx) >= start_frame_idx:
                 images.append(Image.open(folder + '/' + name))
                 i += 1
         if i >= max_frames:
-            print(f'Too many frames to analyze: stopping at frame {max_frames}')
             break
+    print(f'Last frame analyzed: {frame_idx}')
             
     arrays = np.array([np.asarray(image)[:,:,color] for image in images])
     
@@ -85,7 +86,7 @@ def extend(array, new_shape=(960,1600)):
     new_array[offset_x:(offset_x + array.shape[0]), offset_y:(offset_y + array.shape[1])] = array
     return new_array
 
-def subtract_mean(arrays, mean_array, negative=False, batch_size=100):
+def subtract_mean(arrays, mean_array, negative=False, batch_size=100, verbose=False):
     '''
     Smart subtraction of the mean to avoid overflow
     '''
@@ -93,28 +94,40 @@ def subtract_mean(arrays, mean_array, negative=False, batch_size=100):
     m = 255
     M = -255
     for i in range(len(arrays)//batch_size + 1):
-        print(f'batch {i}')
+        if verbose:
+            print(f'batch {i}')
         partial = np.array([array*1. - mean_array for array in arrays[i*batch_size : (i + 1)*batch_size]])
         if len(partial):
             m = min(m, np.min(partial))
             M = max(M, np.max(partial))
             diffs.append(partial)
-    diffs = np.concatenate(diffs)
-    print(f'm = {m}, M = {M}')
-    arrays_sub = diffs - m
+    
+    print(f'{m = }, {M = }')
+    for i in range(len(diffs)):
+        diffs[i] -= m
     
     if M - m > 255:
         print('Subtracting the bias will generate some overflow')    
         o = input('Rescale arrays to avoid overflow? [y/n] ')
         if o == 'y':
-            arrays_sub *= (255/(M - m))
-            
-    arrays_sub = np.array(arrays_sub, dtype=np.uint8)
+            for i in range(len(diffs)):
+                diffs[i] *= (255/(M - m))
+    
+    if verbose:
+        print('converting to np.uint8')
+    for i in range(len(diffs)):
+        diffs[i] = np.array(diffs[i], dtype=np.uint8)
     
     if negative:
-        arrays_sub = 255 - arrays_sub
-        
-    return arrays_sub
+        if verbose:
+            print('making the negative')
+        for i in range(len(diffs)):
+            diffs[i] = 255 - diffs[i]
+    
+    if verbose:
+        print('concatenating')
+    
+    return np.concatenate(diffs)
     
 
 def preprocess(array_sub,rotation=35,filter_size=0, new_shape=(960,1600)):

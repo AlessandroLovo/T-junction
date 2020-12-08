@@ -65,6 +65,9 @@ def read_LV(folder, filename, plot_switch=True):
 # The function does the Fast Fourier Transformation (FFT) and filters the signal keeping the frequency in [min_freq; max_freq]. 
 # Then the function returns the anti-transformed filtered signal.
 def FFT_cropping(signal, min_freq, max_freq, plot_switch=True):
+    '''
+    Makes the fft, crops it between 'min_freq' and 'max_freq' and then returns the ifft
+    '''
     
     # FFT of signal 
     F_sig = np.fft.fft(signal)                            
@@ -93,7 +96,7 @@ def FFT_cropping(signal, min_freq, max_freq, plot_switch=True):
 
 
 # THRESHOLDS SEARCHING FUNCTION :::::::::::::::::::::::::::::::
-def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True, Xdata=None, ymin=None, ymax=None, **kwargs):
+def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True, Xdata=None, ymin=None, ymax=None, c01=None, c02=None, **kwargs):
     
     '''
     Description:
@@ -120,8 +123,14 @@ def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True,
     if ylabel is None:
         ylabel = 'luminosity'
     
+    if plot_switch:
+        #plt.clf() # Clear figure
+        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(15, 5))
+        freq,bins,p = axes[0].hist(Ydata, nbins, **kwargs)
+    
     # Histogram definition
-    freq,bins,p = plt.hist(Ydata, nbins, color='green')
+    else:
+        freq,bins,p = plt.hist(Ydata, nbins, color='green')
     x = 0.5 *(bins[:-1] + bins[1:])
     max_freq = np.max(freq)                                     
         
@@ -132,14 +141,20 @@ def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True,
     # Gaussian 2
     gauss2 = GaussianModel(prefix='g2_')
     pars.update(gauss2.make_params())
-
-    # Gaussian 1 parameters
-    pars['g1_center'].set(max = x[0]+(x[-1]-x[0])*0.7, min=min(x))
-    #pars['g1_sigma'].set(max=(x[-1]-x[0])/10, min=(x[-1]-x[0])/30)
-    #pars['g1_amplitude'].set(value=max(freq)/20,min=10)
+    
+    if c01 is None:
+        # Gaussian 1 parameters
+        pars['g1_center'].set(max = x[0]+(x[-1]-x[0])*0.7, min=min(x))
+        #pars['g1_sigma'].set(max=(x[-1]-x[0])/10, min=(x[-1]-x[0])/30)
+        #pars['g1_amplitude'].set(value=max(freq)/20,min=10)
+    else:
+        pars['g1_center'].set(value = c01)
 
     # Gaussian 2 parameters
-    pars['g2_center'].set(value=x[-1]-(x[-1]-x[0])/10)
+    if c02 is None:
+        c02 = x[-1]-(x[-1]-x[0])/10
+        
+    pars['g2_center'].set(value=c02)
     pars['g2_sigma'].set(value=(x[-1]-x[0])/15)
     pars['g2_amplitude'].set(value=max(freq))
 
@@ -149,11 +164,7 @@ def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True,
 
     
     if plot_switch:
-        plt.clf() # Clear figure
-        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(15, 5))
-        
         # Plot histo
-        axes[0].hist(Ydata, nbins, **kwargs)
         axes[0].plot(x, out.init_fit, 'k--', label='initial fit')
         axes[0].plot(x, out.best_fit, 'r-', label='best fit')
         axes[0].legend(loc='best')
