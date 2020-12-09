@@ -1,0 +1,19 @@
+
+Sul segnale elettronico
+0. Supponiamo l'errore dalla digitalizzazione trascurabile.
+0. Tenere nella parte di trasformata di Fourier le frequenze alte, che sono appunto il rumore che vogliamo studiare. 
+1. Usare l'intero segnale per calcolare il delay che poi sarà usato per il calcolo delle velocità. 
+2. Calcolare le soglie sul segnale tagliato (ovvero da quando le gocce si sono già formate). I tagli servono per capire se il segnale sarà orrizzontale o dovrà essere raddrizzato, in modo poi da avere un singolo sengnale. 
+3. Dividere il segnale elettrico in più parti per vedere come varia la FWHM dei picchi per i vari spezzoni e determinare in questo modo l'errore sul segnale elettronico. 
+4. In caso il segnale non sia orrizzontale (fare una zoom). 
+5. Degli errori per ogni spezzone (FWHM dei picchi) ne facciamo una media e la assegnamo poi a tutte le gocce. La media sarà separata per gli end e per gli start perchè, fisicamente, la forma della goccia è diversa all'inizio e alla fine. 
+6. Proiettare l'errore sul voltaggio sul tempo tramite la pendenza dell'inizio e fine delle gocce, ottenendo gli errori sugli start e sugli end.
+7. Kernel density estimate con barra di errori. 
+
+Alternativa
+Simulazione pazza che farà Alessandro. 
+
+Issue pendenza velcotià
+Nei set dati del 2/12 il flusso non era a regime, pertanto la velocità delle gocce varia nel tempo (in particolare decresce linearmente). Possiamo allora fare un confronto con i set dati con il flusso ben assestato calcolando le velocità usando la frequenza temporale dal sengale elettrico e la taglia spaziale dal segnale delle immagini. 
+
+
