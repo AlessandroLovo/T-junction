@@ -62,6 +62,35 @@ def read_LV(folder, filename, plot_switch=True):
     
     return sig1, sig2, t
 
+
+def resample(sig, t, dt):
+    '''
+    Resample every dt a signal 'sig' that is sampled at each element of array 't'
+    '''
+    new_t = np.arange(t[0], t[-1], dt)
+    
+    new_sig = []
+    t_index = 0
+    t0 = t[t_index]
+    t1 = t[t_index + 1]
+    x0 = sig[t_index]
+    x1 = sig[t_index + 1]
+    
+    for p in new_t:
+        while(p > t1):
+            t_index += 1
+            t0 = t[t_index]
+            t1 = t[t_index + 1]
+            x0 = sig[t_index]
+            x1 = sig[t_index + 1]
+            
+        new_sig.append((x0*(t1 - p) + x1*(p - t0))/(t1 - t0))
+        
+    new_sig = np.array(new_sig)
+    
+    return new_sig, new_t
+
+
 # The function does the Fast Fourier Transformation (FFT) and filters the signal keeping the frequency in [min_freq; max_freq]. 
 # Then the function returns the anti-transformed filtered signal.
 def FFT_cropping(signal, min_freq=1, max_freq=None, plot_switch=True):
