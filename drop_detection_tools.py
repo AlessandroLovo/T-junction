@@ -11,12 +11,13 @@ from lmfit.models import GaussianModel
 
 # READ CSV FILE OUTPUTTED BY LABVIEW
 def read_LV(folder, filename, plot_switch=True):
+    
     '''
     Reads a csv file outputted by LabView
-    
     Returns:
         sig1, sig2, t
     '''
+    
     sig1=[]
     sig2=[]
     t = []
@@ -63,7 +64,10 @@ def read_LV(folder, filename, plot_switch=True):
     return sig1, sig2, t
 
 
+
+# RESAMPLNIG OF THE SIGNAL
 def resample(sig, t, dt):
+    
     '''
     Resample every dt a signal 'sig' that is sampled at each element of array 't'
     '''
@@ -75,6 +79,7 @@ def resample(sig, t, dt):
     t1 = t[t_index + 1]
     x0 = sig[t_index]
     x1 = sig[t_index + 1]
+    
     
     for p in new_t:
         while(p > t1):
@@ -91,12 +96,13 @@ def resample(sig, t, dt):
     return new_sig, new_t
 
 
-# The function does the Fast Fourier Transformation (FFT) and filters the signal keeping the frequency in [min_freq; max_freq]. 
-# Then the function returns the anti-transformed filtered signal.
+
+# FFT FILTERING 
 def FFT_cropping(signal, min_freq=1, max_freq=None, plot_switch=True):
+   
     '''
     Makes the fft, crops it between 'min_freq' and 'max_freq' and then returns the ifft.
-    If they are left None the FFT i not cropped
+    If they are left None the FFT iS not cropped
     '''
     
     max_p_freq = (len(signal) + 1)//2
@@ -108,6 +114,7 @@ def FFT_cropping(signal, min_freq=1, max_freq=None, plot_switch=True):
     
     if max_freq is None or max_freq > max_p_freq:
         max_freq = max_p_freq
+        
     # FFT of signal 
     F_sig = np.fft.fft(signal)                        
 
@@ -134,7 +141,7 @@ def FFT_cropping(signal, min_freq=1, max_freq=None, plot_switch=True):
     return sig_high
 
 
-# THRESHOLDS SEARCHING FUNCTION :::::::::::::::::::::::::::::::
+# THRESHOLDS SEARCHING FUNCTION 
 def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True, Xdata=None, ymin=None, ymax=None, c01=None, c02=None, **kwargs):
     
     '''
@@ -258,7 +265,8 @@ def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True,
     return thr_low, thr_high
 
 
-# DROP DETECTION FUNCTION :::::::::::::::::::::::::::::::::::::::::::::::::::
+
+# DROP DETECTION FUNCTION 
 def drop_det(Xdata, Ydata, thr_low, thr_high, plot_switch=True, ymin=None, ymax=None, xrange=None, **kwargs):
     
     '''
