@@ -64,9 +64,10 @@ def read_LV(folder, filename, plot_switch=True):
 
 # The function does the Fast Fourier Transformation (FFT) and filters the signal keeping the frequency in [min_freq; max_freq]. 
 # Then the function returns the anti-transformed filtered signal.
-def FFT_cropping(signal, min_freq, max_freq, plot_switch=True):
+def FFT_cropping(signal, min_freq=None, max_freq=None, plot_switch=True):
     '''
-    Makes the fft, crops it between 'min_freq' and 'max_freq' and then returns the ifft
+    Makes the fft, crops it between 'min_freq' and 'max_freq' and then returns the ifft.
+    If they are left None the FFT i not cropped
     '''
     
     # FFT of signal 
@@ -81,8 +82,10 @@ def FFT_cropping(signal, min_freq, max_freq, plot_switch=True):
 
     # Signal filtering
     F_sig_crop       = np.zeros(len(F_sig))
-    F_sig[:min_freq] = F_sig_crop[:min_freq]     # Set to 0 F_sig below min_freq
-    F_sig[max_freq:] = F_sig_crop[max_freq:]     # Set to 0 F_sig above max_freq
+    if min_freq is not None:
+        F_sig[:min_freq] = F_sig_crop[:min_freq]     # Set to 0 F_sig below min_freq
+    if max_freq is not None:
+        F_sig[max_freq:] = F_sig_crop[max_freq:]     # Set to 0 F_sig above max_freq
 
     if plot_switch:
         # FFT signal filtered plot
