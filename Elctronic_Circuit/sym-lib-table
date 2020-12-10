@@ -1,0 +1,4 @@
+(sym_lib_table
+  (lib (name Unipd_Lib)(type Legacy)(uri "C:/Users/Marco/Google Drive/Università/Advance Lab/Circuit/Lib/Unipd_Lib.lib")(options "")(descr ""))
+  (lib (name opt101)(type Legacy)(uri "C:/Users/Marco/Google Drive/Università/Advance Lab/Circuit/Lib/opt101.lib")(options "")(descr ""))
+)
