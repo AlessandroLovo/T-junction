@@ -240,6 +240,10 @@ def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True,
     thr_low  = x_max1 + low_sigmas *sigma1
     thr_high = x_max2 - high_sigmas*sigma2
     
+    # Labels
+    label_low  = "thr. low (" + str(low_sigmas) + "$\sigma$)"
+    label_high = "thr. high (" + str(high_sigmas) + "$\sigma$)"
+    
     # Signal plot
     if plot_switch:
         axes[0].vlines([thr_low], *axes[0].get_ylim(), color='cyan')
@@ -249,8 +253,8 @@ def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True,
             Xdata = np.arange(len(Ydata))
         
         axes[1].plot(Xdata, Ydata, **kwargs)
-        axes[1].plot(thr_high*np.ones(len(Xdata)), color='yellow', label='thr_high')
-        axes[1].plot(thr_low *np.ones(len(Xdata)), color='cyan', label='thr_low')
+        axes[1].plot(thr_high*np.ones(len(Xdata)), color='yellow', label=label_low)
+        axes[1].plot(thr_low *np.ones(len(Xdata)), color='cyan', label=label_high)
         plt.legend()
         plt.xlim((0, Xdata[len(Xdata)-1]))
         if not (ymin is None or ymax is None):
