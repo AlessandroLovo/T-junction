@@ -316,7 +316,7 @@ class Channel_analyzer():
 
         
     
-    def calibrate(self,img,real_distance):
+    def calibrate(self,img,real_distance, **kwargs):
         '''
         Allows to calibrate the object to distances in mm
         
@@ -345,7 +345,7 @@ class Channel_analyzer():
         self.real_distance = real_distance
         
         fig, ax = plt.subplots()
-        ax.imshow(img)
+        ax.imshow(img, **kwargs)
         
         def scatter_points():
             p = np.array(self.c_points)
@@ -426,7 +426,9 @@ class Channel_analyzer():
         cid = fig.canvas.mpl_connect('button_press_event', onclick)
         cid2 = fig.canvas.mpl_connect('key_press_event', onpress)
         
-    def measure_distance(self,img):
+        return fig
+        
+    def measure_distance(self,img, **kwargs):
         '''
         Allows to measure the distance in mm between two points
         
@@ -458,7 +460,7 @@ class Channel_analyzer():
             raise ValueError('Object must be calibrated to use this method')
         
         fig, ax = plt.subplots()
-        ax.imshow(img)
+        ax.imshow(img, **kwargs)
         
         def scatter_points():
             p = np.array(self.d_points)
@@ -543,8 +545,9 @@ class Channel_analyzer():
         cid = fig.canvas.mpl_connect('button_press_event', onclick)
         cid2 = fig.canvas.mpl_connect('key_press_event', onpress)
         
+        return fig
     
-    def find_channel(self,img):
+    def find_channel(self,img, **kwargs):
         '''
         Allows to isolate the channel from the rest of the image
         
@@ -574,7 +577,7 @@ class Channel_analyzer():
                 q: stop the interaction with the figure
         '''
         fig, ax = plt.subplots()
-        ax.imshow(img)
+        ax.imshow(img, **kwargs)
         
         def scatter_points():
             p = np.array(self.points)
@@ -712,3 +715,5 @@ class Channel_analyzer():
                      
         cid = fig.canvas.mpl_connect('button_press_event', onclick)
         cid2 = fig.canvas.mpl_connect('key_press_event', onpress)
+        
+        return fig
