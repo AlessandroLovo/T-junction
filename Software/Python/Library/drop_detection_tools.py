@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 #import os
 from tqdm import tqdm
 from lmfit.models import GaussianModel
+from scipy import optimize as optim
 
 
 
@@ -94,6 +95,60 @@ def resample(sig, t, dt):
     new_sig = np.array(new_sig)
     
     return new_sig, new_t
+
+
+# RECTIFY FUNCTION 
+def rectify(signal, fit_func, xdata=None, plot_switch=False, ignore_bias=-1, **kwargs):
+    
+    # Parameters and bounds
+    p0     = kwargs.pop('p0', None)
+    bounds = kwargs.pop('bounds', None)
+    if bounds is None:
+        bounds = (-np.inf, np.inf)
+    
+    # Y-data
+    signal = np.array(signal)
+    
+    # X-data
+    if xdata is None:
+        xdata = np.arange(len(signal))
+    else:
+        xdata = np.array(xdata)
+    
+    # Analysis
+    main_mean  = np.mean(signal)
+    lower_mean = np.mean([s for s in signal if s < main_mean])
+    upper_mean = np.mean([s for s in signal if s >= main_mean])
+    pivot      = 0.5*(lower_mean + upper_mean)
+    z_sig      = signal - pivot
+    fit_mask   = [(s > ignore_bias) for s in np.abs(z_sig)]
+    
+    # Fit
+    popt, pcov = optim.curve_fit(fit_func, xdata[fit_mask], np.abs(z_sig)[fit_mask],p0=p0, bounds=bounds)
+    fit_curve  = fit_func(xdata,*popt)
+    
+    # Normalization
+    n_sig = z_sig/fit_curve
+    
+    # Plots
+    fig = None
+    if plot_switch:
+        fig,axs = plt.subplots(nrows=2, ncols=1, figsize=(15,10))
+        axs[0].plot(xdata, z_sig, alpha=0.2, color='blue')
+        axs[0].plot(xdata[fit_mask], np.abs(z_sig)[fit_mask], color='blue')
+        axs[0].plot(xdata, fit_curve, color='orange', label = 'best fit')
+        axs[1].plot(xdata, signal, color='green', label='original signal')
+        axs[0].set_xlabel('Time [s]')
+        axs[0].set_ylabel('Voltage [V]') 
+        axs[1].set_xlabel('Time [s]')
+        axs[1].set_ylabel('Voltage [V]')
+        ax2 = axs[1].twinx()
+        ax2.plot(xdata, n_sig, color='red', label='normalized signal')
+        ax2.tick_params(axis = 'y', labelcolor = 'red')
+        ax2.set_ylabel('Voltage [V]') 
+        fig.legend()
+    
+    return fig, n_sig
 
 
 
