@@ -130,9 +130,26 @@ def rectify(signal, fit_func, xdata=None, plot_switch=False, ignore_bias=-1, **k
     # Normalization
     n_sig = z_sig/fit_curve
     
+    # Labels
+    main_mean_label  = "$\overline{\rV}$"          
+    lower_mean_label = "$\overline{\rV}_{down}$"
+    upper_mean_label = "$\overline{\rV}_{up}$"    
+    pivot_label      = "$\overline{\rV}_{pivot}$" 
+    
     # Plots
     fig = None
     if plot_switch:
+        
+        # Thresholds plot
+        fig,axs = plt.subplots(nrows=1, ncols=1, figsize=(15,5))
+        axs.plot(xdata, signal, color='blue')
+        axs.plot(xdata, main_mean*np.ones(len(xdata)), 'r--',   label=main_mean_label)
+        axs.plot(xdata, lower_mean*np.ones(len(xdata)), color='cyan',   label=lower_mean_label)
+        axs.plot(xdata, upper_mean*np.ones(len(xdata)), color='yellow', label=upper_mean_label)
+        axs.plot(xdata, pivot*np.ones(len(xdata)), color='red', label=pivot_label)
+        axs.set_xlabel('Time [s]')
+        axs.set_ylabel('Voltage [V]') 
+        fig.legend(loc='center right')
         fig,axs = plt.subplots(nrows=2, ncols=1, figsize=(15,10))
         axs[0].plot(xdata, z_sig, alpha=0.2, color='blue')
         axs[0].plot(xdata[fit_mask], np.abs(z_sig)[fit_mask], color='blue')
