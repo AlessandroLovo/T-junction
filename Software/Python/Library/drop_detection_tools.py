@@ -102,10 +102,9 @@ def rectify(signal, fit_func, xdata=None, plot_switch=False, ignore_bias=-1, **k
     
     # Parameters and bounds
     p0     = kwargs.pop('p0', None)
-    bounds = kwargs.pop('bounds', (-np.inf, np.inf))
-      
-    xlabel = kwargs.pop('xlabel', 'Time [s]')
-    ylabel = kwargs.pop('ylabel', 'Voltage [V]')
+    bounds = kwargs.pop('bounds', None)
+    if bounds is None:
+        bounds = (-np.inf, np.inf)
     
     # Y-data
     signal = np.array(signal)
@@ -125,7 +124,7 @@ def rectify(signal, fit_func, xdata=None, plot_switch=False, ignore_bias=-1, **k
     fit_mask   = [(s > ignore_bias) for s in np.abs(z_sig)]
     
     # Fit
-    popt, pcov = optim.curve_fit(fit_func, xdata[fit_mask], np.abs(z_sig)[fit_mask],p0=p0, bounds=bounds)
+    popt, pcov = optim.curve_fit(fit_func, xdata[fit_mask], np.abs(z_sig)[fit_mask], p0=p0, bounds=bounds)
     fit_curve  = fit_func(xdata,*popt)
     
     # Normalization
@@ -141,29 +140,48 @@ def rectify(signal, fit_func, xdata=None, plot_switch=False, ignore_bias=-1, **k
     fig = None
     if plot_switch:
         
-        # Thresholds plot
+        # Thresholds plot and signal vs abs(z_sig) plot
+        fig,axs = plt.subplots(nrows=1, ncols=2, figsize=(15,5))
+        axs[0].plot(xdata, signal, color='green')
+        axs[0].plot(xdata, main_mean*np.ones(len(xdata)), 'r--',   label=main_mean_label)
+        axs[0].plot(xdata, lower_mean*np.ones(len(xdata)), color='cyan',   label=lower_mean_label)
+        axs[0].plot(xdata, upper_mean*np.ones(len(xdata)), color='yellow', label=upper_mean_label)
+        axs[0].plot(xdata, pivot*np.ones(len(xdata)), color='red', label=pivot_label)
+        axs[0].set_xlabel('Time [s]')
+        axs[0].set_ylabel('Voltage [V]') 
+        axs[1].plot(xdata, signal, color = 'green', label = 'signal')
+        axs[1].plot(xdata, np.abs(z_sig), color='blue', label = '$|$signal -$\overline{\rV}_{pivot}|$')
+        axs[1].set_xlabel('Time [s]')
+        axs[1].set_ylabel('Voltage [V]') 
+        axs[1].set_xlim(45,60)
+        fig.legend(loc='center right')
+
+        
+        # Fit plot
+        fig,axs = plt.subplots(nrows=1, ncols=2, figsize=(15,5))
+        axs[0].plot(xdata, signal, color = 'green')
+        axs[0].plot(xdata[fit_mask], np.abs(z_sig)[fit_mask], color='blue')
+        axs[0].plot(xdata, fit_curve, color='orange')
+        axs[0].set_xlabel('Time [s]')
+        axs[0].set_ylabel('Voltage [V]')
+        axs[1].plot(xdata, signal, color = 'green', label = 'signal')
+        axs[1].plot(xdata[fit_mask], np.abs(z_sig)[fit_mask], color='blue', label='$|$signal -$\overline{\rV}_{pivot}|$ cropped')
+        axs[1].plot(xdata, fit_curve, color='orange', label = 'best fit')
+        axs[1].set_xlabel('Time [s]')
+        axs[1].set_ylabel('Voltage [V]')
+        axs[1].set_xlim(45,60)
+        axs[1].set_ylim(0.04,0.12)
+        fig.legend(loc='center right')
+        
+        # Normalized signal plot
         fig,axs = plt.subplots(nrows=1, ncols=1, figsize=(15,5))
-        axs.plot(xdata, signal, color='blue')
-        axs.plot(xdata, main_mean*np.ones(len(xdata)), 'r--',   label=main_mean_label)
-        axs.plot(xdata, lower_mean*np.ones(len(xdata)), color='cyan',   label=lower_mean_label)
-        axs.plot(xdata, upper_mean*np.ones(len(xdata)), color='yellow', label=upper_mean_label)
-        axs.plot(xdata, pivot*np.ones(len(xdata)), color='red', label=pivot_label)
+        axs.plot(xdata, signal, color='green', label='signal')
         axs.set_xlabel('Time [s]')
         axs.set_ylabel('Voltage [V]') 
-        fig.legend(loc='center right')
-        fig,axs = plt.subplots(nrows=2, ncols=1, figsize=(15,10))
-        axs[0].plot(xdata, z_sig, alpha=0.2, color='blue')
-        axs[0].plot(xdata[fit_mask], np.abs(z_sig)[fit_mask], color='blue')
-        axs[0].plot(xdata, fit_curve, color='orange', label = 'best fit')
-        axs[1].plot(xdata, signal, color='green', label='original signal')
-        axs[0].set_xlabel(xlabel)
-        axs[0].set_ylabel(ylabel) 
-        axs[1].set_xlabel(xlabel)
-        axs[1].set_ylabel(ylabel)
-        ax2 = axs[1].twinx()
+        ax2 = axs.twinx()
         ax2.plot(xdata, n_sig, color='red', label='normalized signal')
         ax2.tick_params(axis = 'y', labelcolor = 'red')
-        ax2.set_ylabel(ylabel) 
+        ax2.set_ylabel('Voltage [V]') 
         fig.legend()
     
     return fig, n_sig
