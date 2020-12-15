@@ -102,9 +102,10 @@ def rectify(signal, fit_func, xdata=None, plot_switch=False, ignore_bias=-1, **k
     
     # Parameters and bounds
     p0     = kwargs.pop('p0', None)
-    bounds = kwargs.pop('bounds', None)
-    if bounds is None:
-        bounds = (-np.inf, np.inf)
+    bounds = kwargs.pop('bounds', (-np.inf, np.inf))
+      
+    xlabel = kwargs.pop('xlabel', 'Time [s]')
+    ylabel = kwargs.pop('ylabel', 'Voltage [V]')
     
     # Y-data
     signal = np.array(signal)
@@ -138,14 +139,14 @@ def rectify(signal, fit_func, xdata=None, plot_switch=False, ignore_bias=-1, **k
         axs[0].plot(xdata[fit_mask], np.abs(z_sig)[fit_mask], color='blue')
         axs[0].plot(xdata, fit_curve, color='orange', label = 'best fit')
         axs[1].plot(xdata, signal, color='green', label='original signal')
-        axs[0].set_xlabel('Time [s]')
-        axs[0].set_ylabel('Voltage [V]') 
-        axs[1].set_xlabel('Time [s]')
-        axs[1].set_ylabel('Voltage [V]')
+        axs[0].set_xlabel(xlabel)
+        axs[0].set_ylabel(ylabel) 
+        axs[1].set_xlabel(xlabel)
+        axs[1].set_ylabel(ylabel)
         ax2 = axs[1].twinx()
         ax2.plot(xdata, n_sig, color='red', label='normalized signal')
         ax2.tick_params(axis = 'y', labelcolor = 'red')
-        ax2.set_ylabel('Voltage [V]') 
+        ax2.set_ylabel(ylabel) 
         fig.legend()
     
     return fig, n_sig
