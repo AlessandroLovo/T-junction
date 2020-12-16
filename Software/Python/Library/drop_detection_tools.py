@@ -98,14 +98,8 @@ def resample(sig, t, dt):
 
 
 # RECTIFY FUNCTION 
-def rectify(signal, fit_func, xdata=None, plot_switch=False, ignore_bias=-1, **kwargs):
-    
-    # Parameters and bounds
-    p0     = kwargs.pop('p0', None)
-    bounds = kwargs.pop('bounds', None)
-    if bounds is None:
-        bounds = (-np.inf, np.inf)
-    
+def rectify_new(signal, xrange, xdata=None, xmin=None, xmax=None, ignore_bias=-1, manual_thr=-np.inf, **kwargs):
+        
     # Y-data
     signal = np.array(signal)
     
@@ -120,71 +114,90 @@ def rectify(signal, fit_func, xdata=None, plot_switch=False, ignore_bias=-1, **k
     lower_mean = np.mean([s for s in signal if s < main_mean])
     upper_mean = np.mean([s for s in signal if s >= main_mean])
     pivot      = 0.5*(lower_mean + upper_mean)
-    z_sig      = signal - pivot
-    fit_mask   = [(s > ignore_bias) for s in np.abs(z_sig)]
     
     # Fit
-    popt, pcov = optim.curve_fit(fit_func, xdata[fit_mask], np.abs(z_sig)[fit_mask], p0=p0, bounds=bounds)
-    fit_curve  = fit_func(xdata,*popt)
+    def f_upper(x):
+        arr = np.where((xdata < x + xrange) * (xdata > x - xrange))
+        max_len = len(arr)
+        arr = signal[arr]
+        arr = arr[arr > pivot + ignore_bias]
+        arr = np.concatenate([arr, np.array([upper_mean]*(max_len - len(arr)))])
+        return np.mean(arr)
+
     
-    # Normalization
-    n_sig = z_sig/fit_curve
+    def f_lower(x):
+        arr = np.where((xdata < x + xrange) * (xdata > x - xrange))
+        max_len = len(arr)
+        arr = signal[arr]
+        arr = arr[arr < pivot - ignore_bias]
+        arr = arr[arr > manual_thr]
+        arr = np.concatenate([arr, np.array([lower_mean]*(max_len - len(arr)))])
+        return np.mean(arr)
+    
+    fit_curve_upper = np.array([f_upper(x) for x in xdata])
+    fit_curve_lower = np.array([f_lower(x) for x in xdata])
+    
+    new_sig = np.copy(signal)
+    for i,s in enumerate(new_sig):
+        if s > pivot:
+            new_sig[i] += upper_mean - fit_curve_upper[i]
+        else:
+            new_sig[i] += lower_mean - fit_curve_lower[i]
+
+   
+
+    # Plots ---------------------------------------------------
     
     # Labels
     main_mean_label  = "$\overline{\rV}$"          
     lower_mean_label = "$\overline{\rV}_{down}$"
     upper_mean_label = "$\overline{\rV}_{up}$"    
-    pivot_label      = "$\overline{\rV}_{pivot}$" 
+    pivot_label      = "$\overline{\rV}_{pivot}$"
+    manual_thr_label = "$V^{manual}_{thr}$"
+    thr_label        = "$\overline{\rV}_{pivot} \pm V_{Bias}$"
+    fit_up_label     = "fit curve (upper)"
+    fit_low_label    = "fit curve (lower)"
+    xlabel           = "Time [s]"
+    ylabel           = "Voltage [s]"
     
-    # Plots
-    fig = None
-    if plot_switch:
-        
-        # Thresholds plot and signal vs abs(z_sig) plot
-        fig,axs = plt.subplots(nrows=1, ncols=2, figsize=(15,5))
-        axs[0].plot(xdata, signal, color='green')
-        axs[0].plot(xdata, main_mean*np.ones(len(xdata)), 'r--',   label=main_mean_label)
-        axs[0].plot(xdata, lower_mean*np.ones(len(xdata)), color='cyan',   label=lower_mean_label)
-        axs[0].plot(xdata, upper_mean*np.ones(len(xdata)), color='yellow', label=upper_mean_label)
-        axs[0].plot(xdata, pivot*np.ones(len(xdata)), color='red', label=pivot_label)
-        axs[0].set_xlabel('Time [s]')
-        axs[0].set_ylabel('Voltage [V]') 
-        axs[1].plot(xdata, signal, color = 'green', label = 'signal')
-        axs[1].plot(xdata, np.abs(z_sig), color='blue', label = '$|$signal -$\overline{\rV}_{pivot}|$')
-        axs[1].set_xlabel('Time [s]')
-        axs[1].set_ylabel('Voltage [V]') 
-        axs[1].set_xlim(45,60)
-        fig.legend(loc='center right')
+    # Thresholds plot
+    fig,axs = plt.subplots(nrows=1, ncols=1, figsize=(8,6))
+    axs.plot(xdata, signal, color='green')
+    axs.plot(xdata, upper_mean*np.ones(len(xdata)),          'y-',  label=upper_mean_label)
+    axs.plot(xdata, lower_mean*np.ones(len(xdata)),          'c-',  label=lower_mean_label)
+    axs.plot(xdata, manual_thr*np.ones(len(xdata)),          'b-',  label=manual_thr_label)
+    #axs.plot(xdata, main_mean*np.ones(len(xdata)),           'r--', label=main_mean_label)
+    axs.plot(xdata, pivot*np.ones(len(xdata)),               'k-',  label=pivot_label)
+    axs.plot(xdata, (pivot+ignore_bias)*np.ones(len(xdata)), 'k--', label=thr_label)
+    axs.plot(xdata, (pivot-ignore_bias)*np.ones(len(xdata)), 'k--')
+    axs.set_xlabel(xlabel)
+    axs.set_ylabel(ylabel) 
+    if not (xmin is None or xmax is None):
+            axs.set_xlim(xmin, xmax)
+    fig.legend(loc='center right')
 
-        
-        # Fit plot
-        fig,axs = plt.subplots(nrows=1, ncols=2, figsize=(15,5))
-        axs[0].plot(xdata, signal, color = 'green')
-        axs[0].plot(xdata[fit_mask], np.abs(z_sig)[fit_mask], color='blue')
-        axs[0].plot(xdata, fit_curve, color='orange')
-        axs[0].set_xlabel('Time [s]')
-        axs[0].set_ylabel('Voltage [V]')
-        axs[1].plot(xdata, signal, color = 'green', label = 'signal')
-        axs[1].plot(xdata[fit_mask], np.abs(z_sig)[fit_mask], color='blue', label='$|$signal -$\overline{\rV}_{pivot}|$ cropped')
-        axs[1].plot(xdata, fit_curve, color='orange', label = 'best fit')
-        axs[1].set_xlabel('Time [s]')
-        axs[1].set_ylabel('Voltage [V]')
-        axs[1].set_xlim(45,60)
-        axs[1].set_ylim(0.04,0.12)
-        fig.legend(loc='center right')
-        
-        # Normalized signal plot
-        fig,axs = plt.subplots(nrows=1, ncols=1, figsize=(15,5))
-        axs.plot(xdata, signal, color='green', label='signal')
-        axs.set_xlabel('Time [s]')
-        axs.set_ylabel('Voltage [V]') 
-        ax2 = axs.twinx()
-        ax2.plot(xdata, n_sig, color='red', label='normalized signal')
-        ax2.tick_params(axis = 'y', labelcolor = 'red')
-        ax2.set_ylabel('Voltage [V]') 
-        fig.legend()
+    # Fit plot 
+    fig,axs = plt.subplots(nrows=1, ncols=1, figsize=(8,6))
+    axs.plot(xdata, signal, 'g-')
+    axs.plot(xdata, fit_curve_upper, 'y-', label=fit_up_label)
+    axs.plot(xdata, fit_curve_lower, 'c-', label=fit_low_label)
+    axs.set_xlabel(xlabel)
+    axs.set_ylabel(ylabel) 
+    if not (xmin is None or xmax is None):
+            axs.set_xlim(xmin, xmax)
+    fig.legend(loc='center right')
+
+    # Final signal plot
+    fig,axs = plt.subplots(nrows=1, ncols=1, figsize=(15,6))
+    axs.plot(xdata, signal,  'g-', label = "original signal")
+    axs.plot(xdata, new_sig, 'r-', label = "rectified signal")
+    axs.set_xlabel(xlabel)
+    axs.set_ylabel(ylabel) 
+    if not (xmin is None or xmax is None):
+            axs.set_xlim(xmin, xmax)
+    fig.legend(loc='center right')
     
-    return fig, n_sig
+    return fig, new_sig
 
 
 
