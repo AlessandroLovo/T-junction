@@ -43,24 +43,15 @@ def read_LV(folder, filename, plot_switch=True):
     t = np.array(t)
     t = t[0:-1]        
     
+    # Signals plots
     if plot_switch:
-        # Plot signal 1
-        plt.figure()
-        plt.figure(figsize=(20,4))
-        plt.title('Signal 1')
-        plt.xlabel("Time [s]")
-        plt.ylabel("Voltage [V]")
-        plt.plot(t, sig1, color='blue')
-        plt.show()
-        
-        # Plot signal 2
-        plt.figure()
-        plt.figure(figsize=(20,4))
-        plt.title('Signal 2')
-        plt.xlabel("Time [s]")
-        plt.ylabel("Voltage [V]")
-        plt.plot(t, sig2, color='green')
-        plt.show()
+        fig, axs = plt.subplots(nrows=2, ncols=1, figsize=(15,6))
+        axs[0].plot(t, sig1, color='blue', label= "signal 1")
+        axs[0].set_ylabel('Voltage [V]')
+        axs[1].plot(t, sig2, color='green', label= "signal 2")
+        axs[1].set_ylabel('Voltage [V]')
+        axs[1].set_xlabel('Time [s]')
+        fig.legend(loc='best')
     
     return sig1, sig2, t
 
@@ -153,7 +144,7 @@ def rectify_new(signal, xrange, xdata=None, xmin=None, xmax=None, ignore_bias=-1
     lower_mean_label = "$\overline{\rV}_{down}$"
     upper_mean_label = "$\overline{\rV}_{up}$"    
     pivot_label      = "$\overline{\rV}_{pivot}$"
-    manual_thr_label = "$V^{manual}_{thr}$"
+    manual_thr_label = "$V_{thr}$"
     thr_label        = "$\overline{\rV}_{pivot} \pm V_{Bias}$"
     fit_up_label     = "fit curve (upper)"
     fit_low_label    = "fit curve (lower)"
@@ -161,31 +152,29 @@ def rectify_new(signal, xrange, xdata=None, xmin=None, xmax=None, ignore_bias=-1
     ylabel           = "Voltage [s]"
     
     # Thresholds plot
-    fig,axs = plt.subplots(nrows=1, ncols=1, figsize=(8,6))
-    axs.plot(xdata, signal, color='green')
-    axs.plot(xdata, upper_mean*np.ones(len(xdata)),          'y-',  label=upper_mean_label)
-    axs.plot(xdata, lower_mean*np.ones(len(xdata)),          'c-',  label=lower_mean_label)
-    axs.plot(xdata, manual_thr*np.ones(len(xdata)),          'b-',  label=manual_thr_label)
-    #axs.plot(xdata, main_mean*np.ones(len(xdata)),           'r--', label=main_mean_label)
-    axs.plot(xdata, pivot*np.ones(len(xdata)),               'k-',  label=pivot_label)
-    axs.plot(xdata, (pivot+ignore_bias)*np.ones(len(xdata)), 'k--', label=thr_label)
-    axs.plot(xdata, (pivot-ignore_bias)*np.ones(len(xdata)), 'k--')
-    axs.set_xlabel(xlabel)
-    axs.set_ylabel(ylabel) 
+    fig,axs = plt.subplots(nrows=1, ncols=2, figsize=(15,6))
+    axs[0].plot(xdata, signal, color='green')
+    axs[0].plot(xdata, upper_mean*np.ones(len(xdata)),          'y-',  label=upper_mean_label)
+    axs[0].plot(xdata, lower_mean*np.ones(len(xdata)),          'c-',  label=lower_mean_label)
+    axs[0].plot(xdata, manual_thr*np.ones(len(xdata)),          'b-',  label=manual_thr_label)
+    axs[0].plot(xdata, pivot*np.ones(len(xdata)),               'k-',  label=pivot_label)
+    axs[0].plot(xdata, (pivot+ignore_bias)*np.ones(len(xdata)), 'k--', label=thr_label)
+    axs[0].plot(xdata, (pivot-ignore_bias)*np.ones(len(xdata)), 'k--')
+    axs[0].set_xlabel(xlabel)
+    axs[0].set_ylabel(ylabel) 
     if not (xmin is None or xmax is None):
-            axs.set_xlim(xmin, xmax)
-    fig.legend(loc='center right')
+            axs[0].set_xlim(xmin, xmax)
+    axs[0].legend()
 
     # Fit plot 
-    fig,axs = plt.subplots(nrows=1, ncols=1, figsize=(8,6))
-    axs.plot(xdata, signal, 'g-')
-    axs.plot(xdata, fit_curve_upper, 'y-', label=fit_up_label)
-    axs.plot(xdata, fit_curve_lower, 'c-', label=fit_low_label)
-    axs.set_xlabel(xlabel)
-    axs.set_ylabel(ylabel) 
+    axs[1].plot(xdata, signal, 'g-')
+    axs[1].plot(xdata, fit_curve_upper, 'y-', label=fit_up_label)
+    axs[1].plot(xdata, fit_curve_lower, 'c-', label=fit_low_label)
+    axs[1].set_xlabel(xlabel)
+    axs[1].set_ylabel(ylabel) 
     if not (xmin is None or xmax is None):
-            axs.set_xlim(xmin, xmax)
-    fig.legend(loc='center right')
+            axs[1].set_xlim(xmin, xmax)
+    axs[1].legend()
 
     # Final signal plot
     fig,axs = plt.subplots(nrows=1, ncols=1, figsize=(15,6))
@@ -195,14 +184,14 @@ def rectify_new(signal, xrange, xdata=None, xmin=None, xmax=None, ignore_bias=-1
     axs.set_ylabel(ylabel) 
     if not (xmin is None or xmax is None):
             axs.set_xlim(xmin, xmax)
-    fig.legend(loc='center right')
+    fig.legend()
     
     return fig, new_sig
 
 
 
 # FFT FILTERING 
-def FFT_cropping(signal, min_freq=1, max_freq=None, plot_switch=True):
+def FFT_cropping(signal, Xdata=None, min_freq=1, max_freq=None, plot_switch=True):
    
     '''
     Makes the fft, crops it between 'min_freq' and 'max_freq' and then returns the ifft.
@@ -218,29 +207,46 @@ def FFT_cropping(signal, min_freq=1, max_freq=None, plot_switch=True):
     
     if max_freq is None or max_freq > max_p_freq:
         max_freq = max_p_freq
+     
+    xlabel = "Time [s]"
+    if Xdata is None:
+        Xdata  = np.arange(len(Ydata))
+        xlabel = "Measure index"
         
     # FFT of signal 
     F_sig = np.fft.fft(signal)                        
 
+    # Plots
     if plot_switch:
         # FFT signal plot
-        fig, axes = plt.subplots(nrows=1, ncols=1)
-        axes.set_xlabel('Frequency')
-        axes.plot(F_sig[:max_p_freq], label='FFT')
-        axes.set_ylim(0,200)
-
+        fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(15,6))
+        axs[0].set_title("Signal frequency spectrum")
+        axs[0].set_xlabel('Frequency')
+        axs[0].plot(F_sig[:max_p_freq], color= "blue", label='FFT')
+        axs[0].set_ylim(0,200)
+        
     # Signal filtering
     F_sig_crop       = np.zeros(len(F_sig))
     F_sig[:min_freq] = F_sig_crop[:min_freq]     # Set to 0 F_sig below min_freq
     F_sig[max_freq:] = F_sig_crop[max_freq:]     # Set to 0 F_sig above max_freq
-
-    if plot_switch:
-        # FFT signal filtered plot
-        axes.plot(F_sig[:max_p_freq], label='FFT cropped')
-        axes.legend()
-
+    
     # Anti-FFT of F_sig
     sig_high = 2*np.fft.ifft(F_sig).real + c0
+
+    # Plots
+    if plot_switch:
+        axs[0].plot(F_sig[:max_p_freq], color= "orange", label='FFT cropped')
+        axs[0].legend()
+        # Signals plots
+        axs[1].set_title("Signal")
+        axs[1].plot(Xdata, signal,   color='blue', label= "original signal")
+        axs[1].set_ylabel('Voltage [V]')
+        axs[1].set_xlabel(xlabel)
+        axs2 = axs[1].twinx() 
+        axs2.tick_params(axis = 'y', labelcolor = "red")
+        axs2.plot(Xdata, sig_high, color='red',  label= "cropped signal")
+        axs2.set_ylabel('Voltage [V]')
+        legend = fig.legend(['original signal','cropped signal'], loc='best')
     
     return sig_high
 
@@ -269,13 +275,12 @@ def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True,
     ylabel = kwargs.pop('ylabel',None)
     
     if xlabel is None:
-        xlabel = 'position [mm]'
+        xlabel = 'Position [mm]'
     if ylabel is None:
-        ylabel = 'luminosity'
+        ylabel = 'Luminosity'
     
     if plot_switch:
-        #plt.clf() # Clear figure
-        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(15, 5))
+        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(15, 6))
         freq,bins,p = axes[0].hist(Ydata, nbins, **kwargs)
     
     # Histogram definition
@@ -315,7 +320,7 @@ def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True,
     
     if plot_switch:
         # Plot histo
-        axes[0].plot(x, out.init_fit, 'k--', label='initial fit')
+        #axes[0].plot(x, out.init_fit, 'k--', label='initial fit')
         axes[0].plot(x, out.best_fit, 'r-', label='best fit')
         axes[0].legend(loc='best')
         axes[0].set_title("Signal histogram")
@@ -450,3 +455,169 @@ def drop_det(Xdata, Ydata, thr_low, thr_high, plot_switch=True, ymin=None, ymax=
             plt.show()
         
     return np.array(drop_start), np.array(drop_end)
+
+
+
+## new version
+# print(bounds) #new drop detection: narrow_start, narrow_end, wide_start, wide end
+def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_skip = 1, return_indexes=True,
+                 plot_switch=True, ymin=None, ymax=None, xrange=None, **kwargs):
+    
+    '''
+    Description:
+        Identifies the start and end position of the droplets in the narrow and wide range
+    
+    Params:
+        - Xdata:             array with time (space)
+        - Ydata:             array with the voltage/luminosity values
+        - thr_low, thr_high: threshold computed with 'thr_seracher'
+        - plot_switch:       if True shows plots
+        - ymin, ymax:        ylims for the plot
+        - xrange:            width of the window to be shown (expressed in time/space units)
+        
+    Returns:
+        narrow_start, narrow_end, wide_start, wide_end : arrays with starts and ends of the droplets
+                                                         They have always the same lenght and *_start[0] < *_end[0],
+                                                         i.e. no spurious detections
+    '''
+    xlabel = kwargs.pop('xlabel', None)
+    ylabel = kwargs.pop('ylabel', None)
+    
+    
+    # Masks
+    bool_high  = Ydata > thr_high
+    bool_low   = Ydata < thr_low
+    
+    #first cycle finds narrow_start. 
+    #drop_ends are detected when drop goes below thr_low.
+    #we don't need them, but they are necessary to the correct narrow_start detection
+    #narrow_start is what we previously called drop_start, drop_end is the old drop_end
+    narrow_start = [0]
+    drop_end   = [1]
+   
+    for i in range(len(Ydata)-1):
+        
+        if bool_high[i]==False and bool_low[i+1]==False and bool_high[i+1]==True:
+            if narrow_start[-1] < drop_end[-1] and i > drop_end[-1]:
+                narrow_start.append(i)
+                
+        elif bool_low[i]==False and bool_low[i+1]==True and bool_high[i+1]==False:
+            if narrow_start[-1] > drop_end[-1] and i > narrow_start[-1]:
+                drop_end.append(i)
+                
+    #second cycle finds narrow_end. Now we call ascent_start the point where the drop goes beyond thr_low.
+    ascent_start=[0]
+    narrow_end=[1]
+    
+    for i in range(len(Ydata)-1):
+        
+        if bool_low[i]==True and bool_high[i]==False and bool_low[i+1]==False:
+            if ascent_start[-1] < narrow_end[-1] and i > narrow_end[-1]:
+                ascent_start.append(i)
+                
+        elif bool_low[i]==False and bool_high[i]==True and bool_high[i+1]==False  :
+            if i > ascent_start[-1]:
+                if ascent_start[-1] > narrow_end[-1]:
+                    narrow_end.append(i)
+                else: 
+                    narrow_end[-1]=i      #make sure to take the real narrow_end, not just a fluctuation in the middle of the drop
+                
+                
+    # Selection
+    narrow_start = narrow_start[1:]
+    narrow_end   = narrow_end[1:]
+    ascent_start = ascent_start[1:]
+    drop_end     = drop_end[1:] 
+    # Cropping
+    if len(narrow_start) > len(narrow_end):
+        narrow_start = narrow_start[:-1] 
+    print(len(narrow_start), len(narrow_end))
+                
+    #find wide_start and wide_end. Only need low thr:
+    #check whenever signal simply overcomes low threshold and stores those indices
+    # wide start: last spike that goes beyond low threshold before ascent_start
+    # wide_end: first spike to go below low threshold after drop_end
+    
+    spike_start=[]
+    spike_end=[]
+    wide_start=[]
+    wide_end=[]
+    
+    for i in range(len(Ydata)-1):
+        if bool_low[i]==True and bool_low[i+1]==False:
+            spike_start.append(i)
+        elif bool_low[i]==False and bool_low[i+1]==True:
+            spike_end.append(i)
+            
+    spike_start = np.array(spike_start)
+    spike_end = np.array(spike_end)
+    
+    b=0
+    a=0
+    for start,end in list(zip(narrow_start,narrow_end)):
+        #print(start,end)
+        if len(spike_start[spike_start<start])>1:
+            if backward_skip > 0:
+                a_start = spike_start[spike_start<start][-(1 + backward_skip)]
+                a_end = spike_start[spike_start<start][-(backward_skip)] - 1
+                peak_idx = np.argmax(Ydata[a_start:a_end])
+                a = a_start + peak_idx
+            else:
+                a = spike_start[spike_start<start][-(1 + backward_skip)]
+            wide_start.append(a)
+        if b>a: print(Xdata[start],'s: WRONG WIDE DROP DETECTION')
+        if len(spike_end[spike_end>end])>1:
+            if forward_skip > 0:
+                b_start = spike_end[spike_end>end][forward_skip - 1] + 1
+                b_end = spike_end[spike_end>end][forward_skip]
+                peak_idx = np.argmax(Ydata[b_start:b_end])
+                b = b_start + peak_idx
+            else:
+                b = spike_end[spike_end>end][forward_skip]
+            wide_end.append(b)
+        
+    #cropping
+    if len(wide_start) > len(wide_end):
+        wide_start = wide_start[:-1] 
+    if len(narrow_start)>len(wide_start):
+        narrow_start = narrow_start[:-1] 
+        narrow_end = narrow_end[:-1] 
+        
+    print(len(narrow_start), len(narrow_end))
+    
+    # Plotting 
+    if plot_switch:
+        if xrange is None:
+            xrange = Xdata[-1]
+        for j in range(int (Xdata[-1]/xrange)):
+            fig, ax = plt.subplots(figsize=(15,6))
+            plt.plot(Xdata, Ydata, **kwargs)
+            
+            if ymin is None or ymax is None:
+                ymin, ymax = ax.get_ylim()
+            else:
+                plt.ylim(ymin, ymax)
+            
+            for i in range(len(narrow_end)-1):
+
+                plt.vlines(Xdata[narrow_start[i]], ymin, ymax, color='green',  label="start (narrow)")
+                plt.vlines(Xdata[narrow_end[i]],   ymin, ymax, color='red',    label="end (narrow)")
+                plt.vlines(Xdata[wide_start[i]],   ymin, ymax, color='lime',   label="start (wide)")
+                plt.vlines(Xdata[wide_end[i]],     ymin, ymax, color='orange', label="end (wide)")
+
+            plt.ylabel(ylabel)
+            plt.xlabel(xlabel)
+            plt.xlim(j*xrange,(j+1)*xrange)
+            plt.plot(thr_high*np.ones(len(Xdata)), color='yellow', label = "thr. high")
+            plt.plot(thr_low *np.ones(len(Xdata)), color='cyan',   label = "thr. low")
+            plt.show()
+
+         
+    if not return_indexes: #         Number acquisition -> time [s] conversion
+        narrow_start = Xdata[narrow_start]
+        narrow_end   = Xdata[narrow_end]
+        wide_start   = Xdata[wide_start]
+        wide_end     = Xdata[wide_end]
+    
+        
+    return np.array(narrow_start), np.array(narrow_end), np.array(wide_start), np.array(wide_end)
