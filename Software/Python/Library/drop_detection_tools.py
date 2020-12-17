@@ -590,7 +590,7 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
     a=0
     for start,end in list(zip(narrow_start,narrow_end)):
         #print(start,end)
-        if len(spike_start[spike_start<start])>1:
+        if len(spike_start[spike_start<start])>= 1 + backward_skip:
             if backward_skip > 0:
                 a_start = spike_start[spike_start<start][-(1 + backward_skip)]
                 a_end = spike_start[spike_start<start][-(backward_skip)] - 1
@@ -600,7 +600,7 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
                 a = spike_start[spike_start<start][-(1 + backward_skip)]
             wide_start.append(a)
         if b>a: print(Xdata[start],'s: WRONG WIDE DROP DETECTION')
-        if len(spike_end[spike_end>end])>1:
+        if len(spike_end[spike_end>end])>= 1 + forward_skip:
             if forward_skip > 0:
                 b_start = spike_end[spike_end>end][forward_skip - 1] + 1
                 b_end = spike_end[spike_end>end][forward_skip]
