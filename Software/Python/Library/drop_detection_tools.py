@@ -163,7 +163,7 @@ def rectify_new(signal, xrange, xdata=None, ignore_bias=-1, manual_thr=-np.inf, 
    
 
     # Plots ---------------------------------------------------
-    fig = None
+    fig1, fig2 = None, None
     if plot_switch:
         
         y_name = 'y'
@@ -181,7 +181,7 @@ def rectify_new(signal, xrange, xdata=None, ignore_bias=-1, manual_thr=-np.inf, 
         fit_low_label    = "fit curve (lower)"
         
         # Thresholds plot
-        fig,axs = plt.subplots(nrows=1, ncols=2, figsize=figsize)
+        fig1,axs = plt.subplots(nrows=1, ncols=2, figsize=figsize)
         axs[0].plot(xdata, signal, color='green')
         axs[0].plot(xdata, upper_mean*np.ones(len(xdata)),          'y-',  label=upper_mean_label)
         axs[0].plot(xdata, lower_mean*np.ones(len(xdata)),          'c-',  label=lower_mean_label)
@@ -206,18 +206,21 @@ def rectify_new(signal, xrange, xdata=None, ignore_bias=-1, manual_thr=-np.inf, 
         if not (xmin is None or xmax is None):
                 axs[1].set_xlim(xmin, xmax)
         axs[1].legend()
+        
+        fig1.tight_layout()
     
         # Final signal plot
-        fig,axs = plt.subplots(nrows=1, ncols=1, figsize=figsize)
+        fig2,axs = plt.subplots(nrows=1, ncols=1, figsize=figsize)
         axs.plot(xdata, signal,  'g-', label = "original signal")
         axs.plot(xdata, new_sig, 'r-', label = "rectified signal")
         axs.set_xlabel(xlabel)
         axs.set_ylabel(ylabel) 
         if not (xmin is None or xmax is None):
                 axs.set_xlim(xmin, xmax)
-        fig.legend()
+        fig2.legend()
+        fig2.tight_layout()
     
-    return fig, new_sig
+    return (fig1,fig2), new_sig
 
 
 
@@ -629,7 +632,7 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
             else:
                 plt.ylim(ymin, ymax)
             
-            for i in range(len(narrow_end)-1):
+            for i in range(len(narrow_end)):
 
                 plt.vlines(Xdata[narrow_start[i]], ymin, ymax, color='green',  label="start (narrow)")
                 plt.vlines(Xdata[narrow_end[i]],   ymin, ymax, color='red',    label="end (narrow)")
