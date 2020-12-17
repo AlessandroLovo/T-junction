@@ -375,7 +375,7 @@ def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True,
     if thr_low > thr_high:
         print('WARNING: thr_low > thr_high')
     
-    return thr_low, thr_high
+    return thr_low, thr_high, sigma1, sigma2 # sigma1 is the lower one
 
 
 
