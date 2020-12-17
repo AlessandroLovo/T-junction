@@ -103,6 +103,7 @@ def rectify_new(signal, xrange, xdata=None, ignore_bias=-1, manual_thr=-np.inf, 
         'plot_switch': toggle plots
         
         '**kwargs':
+            figsize
             xmin, xmax: manual xlim for the plots
             xlabel
             ylabel
@@ -113,6 +114,7 @@ def rectify_new(signal, xrange, xdata=None, ignore_bias=-1, manual_thr=-np.inf, 
     xmax = kwargs.pop('xmax', None)
     xlabel = kwargs.pop('xlabel', 'Time [s]')
     ylabel = kwargs.pop('ylabel', 'Voltage [V]')
+    figsize = kwargs.pop('figsize', (15,6))
     
     # Y-data
     signal = np.array(signal)
@@ -179,14 +181,16 @@ def rectify_new(signal, xrange, xdata=None, ignore_bias=-1, manual_thr=-np.inf, 
         fit_low_label    = "fit curve (lower)"
         
         # Thresholds plot
-        fig,axs = plt.subplots(nrows=1, ncols=2, figsize=(15,6))
+        fig,axs = plt.subplots(nrows=1, ncols=2, figsize=figsize)
         axs[0].plot(xdata, signal, color='green')
         axs[0].plot(xdata, upper_mean*np.ones(len(xdata)),          'y-',  label=upper_mean_label)
         axs[0].plot(xdata, lower_mean*np.ones(len(xdata)),          'c-',  label=lower_mean_label)
-        axs[0].plot(xdata, manual_thr*np.ones(len(xdata)),          'b-',  label=manual_thr_label)
+        if manual_thr > axs[0].get_ylim()[0]:
+            axs[0].plot(xdata, manual_thr*np.ones(len(xdata)),          'b-',  label=manual_thr_label)
         axs[0].plot(xdata, pivot*np.ones(len(xdata)),               'k-',  label=pivot_label)
-        axs[0].plot(xdata, (pivot+ignore_bias)*np.ones(len(xdata)), 'k--', label=thr_label)
-        axs[0].plot(xdata, (pivot-ignore_bias)*np.ones(len(xdata)), 'k--')
+        if ignore_bias > 0:
+            axs[0].plot(xdata, (pivot+ignore_bias)*np.ones(len(xdata)), 'k--', label=thr_label)
+            axs[0].plot(xdata, (pivot-ignore_bias)*np.ones(len(xdata)), 'k--')
         axs[0].set_xlabel(xlabel)
         axs[0].set_ylabel(ylabel) 
         if not (xmin is None or xmax is None):
@@ -204,7 +208,7 @@ def rectify_new(signal, xrange, xdata=None, ignore_bias=-1, manual_thr=-np.inf, 
         axs[1].legend()
     
         # Final signal plot
-        fig,axs = plt.subplots(nrows=1, ncols=1, figsize=(15,6))
+        fig,axs = plt.subplots(nrows=1, ncols=1, figsize=figsize)
         axs.plot(xdata, signal,  'g-', label = "original signal")
         axs.plot(xdata, new_sig, 'r-', label = "rectified signal")
         axs.set_xlabel(xlabel)
