@@ -150,8 +150,8 @@ def rectify_new(signal, xrange, xdata=None, ignore_bias=-1, manual_thr=-np.inf, 
         arr = np.concatenate([arr, np.array([lower_mean]*(max_len - len(arr)))])
         return np.mean(arr)
     
-    fit_curve_upper = np.array([f_upper(x) for x in xdata])
-    fit_curve_lower = np.array([f_lower(x) for x in xdata])
+    fit_curve_upper = np.array([f_upper(x) for x in tqdm(xdata)])
+    fit_curve_lower = np.array([f_lower(x) for x in tqdm(xdata)])
     
     new_sig = np.copy(signal)
     for i,s in enumerate(new_sig):
