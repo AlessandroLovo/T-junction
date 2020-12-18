@@ -89,7 +89,7 @@ def resample(sig, t, dt):
 
 
 # RECTIFY FUNCTION 
-def rectify_new(signal, xrange, xdata=None, ignore_bias=-1, manual_thr=-np.inf, plot_switch=True, **kwargs):
+def rectify_new(signal, xrange, xdata=None, ignore_bias=-1, manual_thr=-np.inf, plot_switch=True, prog_bar=True, **kwargs):
     '''
     Uses a running mean to straighten a signal
     
@@ -109,6 +109,11 @@ def rectify_new(signal, xrange, xdata=None, ignore_bias=-1, manual_thr=-np.inf, 
             ylabel
             
     '''
+    
+    if prog_bar:
+        it = tqdm
+    else:
+        it = lambda x: x
     
     xmin = kwargs.pop('xmin', None)
     xmax = kwargs.pop('xmax', None)
@@ -150,8 +155,8 @@ def rectify_new(signal, xrange, xdata=None, ignore_bias=-1, manual_thr=-np.inf, 
         arr = np.concatenate([arr, np.array([lower_mean]*(max_len - len(arr)))])
         return np.mean(arr)
     
-    fit_curve_upper = np.array([f_upper(x) for x in tqdm(xdata)])
-    fit_curve_lower = np.array([f_lower(x) for x in tqdm(xdata)])
+    fit_curve_upper = np.array([f_upper(x) for x in it(xdata)])
+    fit_curve_lower = np.array([f_lower(x) for x in it(xdata)])
     
     new_sig = np.copy(signal)
     for i,s in enumerate(new_sig):
@@ -286,7 +291,7 @@ def FFT_cropping(signal, Xdata=None, min_freq=1, max_freq=None, plot_switch=True
 
 
 # THRESHOLDS SEARCHING FUNCTION 
-def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True, Xdata=None, ymin=None, ymax=None, c01=None, c02=None, **kwargs):
+def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=3, c01=None, c02=None, plot_switch=True, Xdata=None, **kwargs):
     
     '''
     Description:
@@ -297,9 +302,15 @@ def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True,
         - nbins:       number of bins for the histogram to find the two thresholds
         - low_sigmas:  number of sigmas above the low mean where to put the lower thr
         - high_sigmas: number of sigmas below the high mean where to put the higher thr
+        
         - plot_switch: if True shows plots
         - Xdata:       array with the matching time (or space) to the data
-        - ymin, ymax:  ylims for the plot
+        
+        **kwargs:
+            - ymin, ymax:  ylims for the plot
+            - xlabel
+            - ylabel
+            - figsize
         
     Returns:
         thr_low, thr_high
@@ -307,6 +318,9 @@ def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True,
     
     xlabel = kwargs.pop('xlabel',None)
     ylabel = kwargs.pop('ylabel',None)
+    ymin = kwargs.pop('ymin', None)
+    ymax = kwargs.pop('ymax', None)
+    figsize = kwargs.pop('figsize', (15, 6))
     
     if xlabel is None:
         xlabel = 'Position [mm]'
@@ -314,7 +328,7 @@ def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True,
         ylabel = 'Luminosity'
     
     if plot_switch:
-        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(15, 6))
+        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=figsize)
         freq,bins,p = axes[0].hist(Ydata, nbins, **kwargs)
     
     # Histogram definition
@@ -414,7 +428,7 @@ def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=5, plot_switch=True,
 
 
 # DROP DETECTION FUNCTION 
-def drop_det(Xdata, Ydata, thr_low, thr_high, plot_switch=True, ymin=None, ymax=None, xrange=None, **kwargs):
+def drop_det(Xdata, Ydata, thr_low, thr_high, plot_switch=True, **kwargs):
     
     '''
     Description:
@@ -424,15 +438,23 @@ def drop_det(Xdata, Ydata, thr_low, thr_high, plot_switch=True, ymin=None, ymax=
         - Xdata:             array with time (space)
         - Ydata:             array with the voltage/luminosity values
         - thr_low, thr_high: threshold computed with 'thr_seracher'
-        - plot_switch:       if True shows plots
-        - ymin, ymax:        ylims for the plot
-        - xrange:            width of the window to be shown (expressed in time/space units)
         
+        - plot_switch:       if True shows plots
+        **kwargs:
+            - ymin, ymax:        ylims for the plot
+            - xrange:            width of the window to be shown (expressed in time/space units)
+            - figsize
+            
     Returns:
         drop_start, drop_end: arrays with starts and ends of the droplets
                               They have always the same lenght and drop_start[0] < drop_end[0],
                               i.e. no spurious detections
     '''
+    
+    ymin = kwargs.pop('ymin', None)
+    ymax = kwargs.pop('ymax', None)
+    xrange = kwargs.pop('xrange', None)
+    figsize = kwargs.pop('figsize', (20, 4))
     
     # Drops edges computing
     bool_high  = Ydata > thr_high
@@ -468,7 +490,7 @@ def drop_det(Xdata, Ydata, thr_low, thr_high, plot_switch=True, ymin=None, ymax=
         if xrange is None:
             xrange = Xdata[-1]
         for j in range(int (Xdata[-1]/xrange)):
-            fig, ax = plt.subplots(figsize=(20,4))
+            fig, ax = plt.subplots(figsize=figsize)
             plt.plot(Xdata, Ydata, **kwargs)
             
             if ymin is None or ymax is None:
@@ -494,8 +516,8 @@ def drop_det(Xdata, Ydata, thr_low, thr_high, plot_switch=True, ymin=None, ymax=
 
 ## new version
 # print(bounds) #new drop detection: narrow_start, narrow_end, wide_start, wide end
-def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_skip = 1, return_indexes=True,
-                 plot_switch=True, ymin=None, ymax=None, xrange=None, **kwargs):
+def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_skip = 1, return_indexes=True, keep_invalid=True,
+                 plot_switch=True, **kwargs):
     
     '''
     Description:
@@ -505,9 +527,15 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
         - Xdata:             array with time (space)
         - Ydata:             array with the voltage/luminosity values
         - thr_low, thr_high: threshold computed with 'thr_seracher'
+        - backward_skip:     how many peaks to look before the narrow start for the wide start
+        - forward_skip:      how many peaks to look after the narrow end for the wide end
+        
         - plot_switch:       if True shows plots
-        - ymin, ymax:        ylims for the plot
-        - xrange:            width of the window to be shown (expressed in time/space units)
+        
+        **kwargs:
+            - ymin, ymax:        ylims for the plot
+            - xrange:            width of the window to be shown (expressed in time/space units)
+            - figsize
         
     Returns:
         narrow_start, narrow_end, wide_start, wide_end : arrays with starts and ends of the droplets
@@ -516,6 +544,10 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
     '''
     xlabel = kwargs.pop('xlabel', None)
     ylabel = kwargs.pop('ylabel', None)
+    ymin = kwargs.pop('ymin', None)
+    ymax = kwargs.pop('ymax', None)
+    xrange = kwargs.pop('xrange', None)
+    figsize = kwargs.pop('figsize', (15, 6))
     
     
     # Masks
@@ -561,7 +593,12 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
     narrow_start = narrow_start[1:]
     narrow_end   = narrow_end[1:]
     ascent_start = ascent_start[1:]
-    drop_end     = drop_end[1:] 
+    drop_end     = drop_end[1:]
+    
+    if narrow_start[0] < ascent_start[0]: # first droplet has no ascent
+        narrow_start = narrow_start[1:]
+    
+    #print(len(narrow_start), len(narrow_end))
     # Cropping
     if len(narrow_start) > len(narrow_end):
         narrow_start = narrow_start[:-1] 
@@ -588,7 +625,10 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
     
     b=0
     a=0
-    for start,end in list(zip(narrow_start,narrow_end)):
+    
+    invalid_is = []
+    
+    for i,(start,end) in enumerate(list(zip(narrow_start,narrow_end))):
         #print(start,end)
         if len(spike_start[spike_start<start])>= 1 + backward_skip:
             if backward_skip > 0:
@@ -599,7 +639,14 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
             else:
                 a = spike_start[spike_start<start][-(1 + backward_skip)]
             wide_start.append(a)
+        else:
+            invalid_is.append(i)
+            if keep_invalid:
+                print("Couldn't find wide start, inserting a fake one")
+            wide_start.append(start - 1)
+                
         if b>a: print(Xdata[start],'s: WRONG WIDE DROP DETECTION')
+        
         if len(spike_end[spike_end>end])>= 1 + forward_skip:
             if forward_skip > 0:
                 b_start = spike_end[spike_end>end][forward_skip - 1] + 1
@@ -609,7 +656,21 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
             else:
                 b = spike_end[spike_end>end][forward_skip]
             wide_end.append(b)
-        
+        else:
+            if i not in invalid_is:
+                invalid_is.append(i)
+            if keep_invalid:
+                print("Couldn't find wide end, inserting a fake one")
+            wide_end.append(end + 1)
+    
+    # removing invalid drops
+    if not keep_invalid:
+        for i in reversed(invalid_is):
+            wide_start.pop(i)
+            narrow_start.pop(i)
+            narrow_end.pop(i)
+            wide_end.pop(i)
+    
     #cropping
     if len(wide_start) > len(wide_end):
         wide_start = wide_start[:-1] 
@@ -624,7 +685,7 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
         if xrange is None:
             xrange = Xdata[-1]
         for j in range(int (Xdata[-1]/xrange)):
-            fig, ax = plt.subplots(figsize=(15,6))
+            fig, ax = plt.subplots(figsize=figsize)
             plt.plot(Xdata, Ydata, **kwargs)
             
             if ymin is None or ymax is None:
@@ -659,6 +720,21 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
 
 # SLOPE FUNCTION 
 def slopes(Xdata, Ydata, start_idxs, end_idxs, start_range, end_range, plot_switch=True):
+    '''
+    Computes the slope of a signal around array of points
+    
+    Params:
+        'Xdata', 'Ydata': must have the same lenght
+        'start_idxs', 'end_idxs': array-like of indexes where to compute the slopes. Must have the same lenght
+        'start_range': half of the number of points used for the linear fit on start points
+        'end_range': half of the number of points used for the linear fit on end points
+        
+        'plot_switch': toggle plots
+        
+    Returns:
+        slope_start, slope_end: np.arrays with the computed slopes
+        
+    '''
 
     def lin_func(x,a,b):
         return a*x + b
