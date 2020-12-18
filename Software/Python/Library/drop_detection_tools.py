@@ -533,6 +533,8 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
         - plot_switch:       if True shows plots
         
         **kwargs:
+            - xlabel
+            - ylabel
             - ymin, ymax:        ylims for the plot
             - xrange:            width of the window to be shown (expressed in time/space units)
             - figsize
@@ -719,7 +721,7 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
 
 
 # SLOPE FUNCTION 
-def slopes(Xdata, Ydata, start_idxs, end_idxs, start_range, end_range, plot_switch=True):
+def slopes(Xdata, Ydata, start_idxs, end_idxs, start_range, end_range, plot_switch=True, **kwargs):
     '''
     Computes the slope of a signal around array of points
     
@@ -731,10 +733,19 @@ def slopes(Xdata, Ydata, start_idxs, end_idxs, start_range, end_range, plot_swit
         
         'plot_switch': toggle plots
         
+        **kwargs:
+            - xlabel
+            - ylabel
+            - figsize
+        
     Returns:
         slope_start, slope_end: np.arrays with the computed slopes
         
     '''
+    xlabel = kwargs.pop('xlabel', None)
+    ylabel = kwargs.pop('ylabel', None)
+    figsize = kwargs.pop('figsize', (13, 6))
+    
 
     def lin_func(x,a,b):
         return a*x + b
@@ -743,12 +754,14 @@ def slopes(Xdata, Ydata, start_idxs, end_idxs, start_range, end_range, plot_swit
     slope_end   = []
     
     if plot_switch:
-        fig, ax = plt.subplots(figsize=(13,6))
+        fig, ax = plt.subplots(figsize=figsize)
         ax.plot(Xdata,Ydata, color='blue', alpha = 0.5)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
     
     for n_start, n_end in list(zip(start_idxs,end_idxs)):
-        x = Xdata[n_start-start_range:n_start+start_range]
-        y = Ydata[n_start-start_range:n_start+start_range]
+        x = Xdata[max(n_start-start_range, 0):min(n_start+start_range, len(Xdata))]
+        y = Ydata[max(n_start-start_range, 0):min(n_start+start_range, len(Ydata))]
         popt, pcov = optim.curve_fit(lin_func, x, y)
         slope_start.append(popt[0])
         #example plot
