@@ -593,7 +593,12 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
     narrow_start = narrow_start[1:]
     narrow_end   = narrow_end[1:]
     ascent_start = ascent_start[1:]
-    drop_end     = drop_end[1:] 
+    drop_end     = drop_end[1:]
+    
+    if narrow_start[0] < ascent_start[0]: # first droplet has no ascent
+        narrow_start = narrow_start[1:]
+    
+    #print(len(narrow_start), len(narrow_end))
     # Cropping
     if len(narrow_start) > len(narrow_end):
         narrow_start = narrow_start[:-1] 
@@ -631,6 +636,9 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
             else:
                 a = spike_start[spike_start<start][-(1 + backward_skip)]
             wide_start.append(a)
+        else:
+            print("Couldn't find wide start, inserting a fake one")
+            wide_start.append(start - 1)
         if b>a: print(Xdata[start],'s: WRONG WIDE DROP DETECTION')
         if len(spike_end[spike_end>end])>= 1 + forward_skip:
             if forward_skip > 0:
@@ -641,6 +649,9 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
             else:
                 b = spike_end[spike_end>end][forward_skip]
             wide_end.append(b)
+        else:
+            print("Couldn't find wide end, inserting a fake one")
+            wide_end.append(end + 1)
         
     #cropping
     if len(wide_start) > len(wide_end):
