@@ -27,15 +27,15 @@ def plot(*args, ax=None, **kwargs):
     else:
         ys = args[0]
         xs = np.arange(len(ys))
-    if type(xs[0]) == unc.core.Variable:
+    
+    if type(xs[0]) == unc.core.Variable or type(xs[0])==unc.core.AffineScalarFunc:
         x_d = np.array([[x.n, x.s] for x in xs])
         x_val = x_d[:,0]
         x_err = x_d[:,1]
     else:
         x_val = xs
         x_err = None
-    
-    if type(ys[0]) == unc.core.Variable:
+    if type(ys[0]) == unc.core.Variable or type(ys[0])==unc.core.AffineScalarFunc:
         y_d = np.array([[y.n, y.s] for y in ys])
         y_val = y_d[:,0]
         y_err = y_d[:,1]
@@ -77,7 +77,7 @@ class ExtendedKDE():
         return points, np.array([self(point) for point in tqdm(points)])
     
 
-    def plot(self, points=30, ax=None, xrange=None, **kwargs):
+    def plot(self, points=30, ax=None, xrange=None, switch_xy=False, **kwargs):
         '''
         Performs a kde histogram of ufloat data
 
@@ -96,7 +96,10 @@ class ExtendedKDE():
         points, values = self.evaluate(points)
         
         if ax is not None:
-            ax.plot(points,values, **kwargs)
+            if switch_xy==False:
+                ax.plot(points, values, **kwargs)
+            else: 
+                ax.plot(values, points, **kwargs)
         else:
             plt.plot(points,values, **kwargs)
 
