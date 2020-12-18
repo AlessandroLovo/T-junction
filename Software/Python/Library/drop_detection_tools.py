@@ -655,3 +655,41 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
     
         
     return np.array(narrow_start), np.array(narrow_end), np.array(wide_start), np.array(wide_end)
+
+
+# SLOPE FUNCTION 
+def slopes(Xdata, Ydata, start_idxs, end_idxs, start_range, end_range, plot_switch=True):
+
+    def lin_func(x,a,b):
+        return a*x + b
+    
+    slope_start = []
+    slope_end   = []
+    
+    if plot_switch:
+        fig, ax = plt.subplots(figsize=(13,6))
+        ax.plot(Xdata,Ydata, color='blue', alpha = 0.5)
+    
+    for n_start, n_end in list(zip(start_idxs,end_idxs)):
+        x = Xdata[n_start-start_range:n_start+start_range]
+        y = Ydata[n_start-start_range:n_start+start_range]
+        popt, pcov = optim.curve_fit(lin_func, x, y)
+        slope_start.append(popt[0])
+        #example plot
+        if plot_switch:
+            fit_curve = lin_func(x,*popt)
+            ax.plot(x, fit_curve, color='green')
+
+        x = Xdata[n_end-end_range:n_end+end_range]
+        y = Ydata[n_end-end_range:n_end+end_range]
+        popt, pcov = optim.curve_fit(lin_func, x, y)
+        slope_end.append(popt[0])
+        
+        if plot_switch:
+            fit_curve = lin_func(x,*popt)
+            ax.plot(x, fit_curve, color='red')
+
+            
+    return np.array(slope_start), np.array(slope_end)
+
+
