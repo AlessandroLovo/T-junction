@@ -516,7 +516,7 @@ def drop_det(Xdata, Ydata, thr_low, thr_high, plot_switch=True, **kwargs):
 
 ## new version
 # print(bounds) #new drop detection: narrow_start, narrow_end, wide_start, wide end
-def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_skip = 1, return_indexes=True,
+def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_skip = 1, return_indexes=True, keep_invalid=True,
                  plot_switch=True, **kwargs):
     
     '''
@@ -625,7 +625,10 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
     
     b=0
     a=0
-    for start,end in list(zip(narrow_start,narrow_end)):
+    
+    invalid_is = []
+    
+    for i,(start,end) in enumerate(list(zip(narrow_start,narrow_end))):
         #print(start,end)
         if len(spike_start[spike_start<start])>= 1 + backward_skip:
             if backward_skip > 0:
@@ -637,9 +640,13 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
                 a = spike_start[spike_start<start][-(1 + backward_skip)]
             wide_start.append(a)
         else:
-            print("Couldn't find wide start, inserting a fake one")
+            invalid_is.append(i)
+            if keep_invalid:
+                print("Couldn't find wide start, inserting a fake one")
             wide_start.append(start - 1)
+                
         if b>a: print(Xdata[start],'s: WRONG WIDE DROP DETECTION')
+        
         if len(spike_end[spike_end>end])>= 1 + forward_skip:
             if forward_skip > 0:
                 b_start = spike_end[spike_end>end][forward_skip - 1] + 1
@@ -650,9 +657,20 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
                 b = spike_end[spike_end>end][forward_skip]
             wide_end.append(b)
         else:
-            print("Couldn't find wide end, inserting a fake one")
+            if i not in invalid_is:
+                invalid_is.append(i)
+            if keep_invalid:
+                print("Couldn't find wide end, inserting a fake one")
             wide_end.append(end + 1)
-        
+    
+    # removing invalid drops
+    if not keep_invalid:
+        for i in reversed(invalid_is):
+            wide_start.pop(i)
+            narrow_start.pop(i)
+            narrow_end.pop(i)
+            wide_end.pop(i)
+    
     #cropping
     if len(wide_start) > len(wide_end):
         wide_start = wide_start[:-1] 
