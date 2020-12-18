@@ -1,9 +1,9 @@
 file containing parameters from fit: center_1, sigma_1, center_2, sigma_2
-spatial size wide (mm)	5.084263550767738	0.20154240577880422	5.073576079254048	0.1715292707365872
-spatial size narrow (mm)	3.4020623114401403	0.21250528642148003	3.3328052424024954	0.18732289835642568
-temporal size wide (s)	5.848931187073544	0.289899857487556	5.851438738785856	0.3515576983384361
-temporal size narrow (s)	3.904719049299538	0.2764980412835891	3.847387093690178	0.283543554383886
-temporal distance wide (mm)	3.650489034724183	0.1847429765119073	3.5492245553514477	0.18609927046071517
-temporal distance narrow (mm)	5.597835672904142	0.2739402866722762	5.573993110116121	0.28150141668575945
-period wide (s)	<Parameter 'g1_center', value=9.442841917661013 +/- 0.0335, bounds=[-inf:inf]>	<Parameter 'g1_sigma', value=0.24932214086696636 +/- 0.0335, bounds=[0.0:inf]>	<Parameter 'g2_center', value=9.354096962653593 +/- 0.0324, bounds=[-inf:inf]>	<Parameter 'g2_sigma', value=0.2650947857889956 +/- 0.0324, bounds=[0.0:inf]>
-period narrow (s)	<Parameter 'g1_center', value=9.4776315952282 +/- 0.0347, bounds=[-inf:inf]>	<Parameter 'g1_sigma', value=0.3260566467847483 +/- 0.0348, bounds=[0.0:inf]>	<Parameter 'g2_center', value=9.372759294671669 +/- 0.0311, bounds=[-inf:inf]>	<Parameter 'g2_sigma', value=0.33049701629911854 +/- 0.0312, bounds=[0.0:inf]>
+spatial size wide (mm)	5.084+/-0.018	0.202+/-0.018	5.074+/-0.016	0.172+/-0.016
+spatial size narrow (mm)	3.402+/-0.012	0.213+/-0.012	3.333+/-0.013	0.187+/-0.013
+temporal size wide (s)	5.849+/-0.021	0.290+/-0.021	5.851+/-0.029	0.352+/-0.029
+temporal size narrow (s)	3.905+/-0.013	0.276+/-0.013	3.847+/-0.018	0.284+/-0.018
+temporal distance wide (mm)	3.650+/-0.015	0.185+/-0.015	3.549+/-0.014	0.186+/-0.014
+temporal distance narrow (mm)	5.598+/-0.019	0.274+/-0.019	5.574+/-0.019	0.282+/-0.019
+period wide (s)	9.443+/-0.034	0.249+/-0.034	9.354+/-0.032	0.265+/-0.032
+period narrow (s)	9.478+/-0.035	0.326+/-0.035	9.373+/-0.031	0.330+/-0.031
