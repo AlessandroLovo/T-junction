@@ -721,7 +721,7 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
 
 
 # SLOPE FUNCTION 
-def slopes(Xdata, Ydata, start_idxs, end_idxs, start_range, end_range, plot_switch=True, **kwargs):
+def slopes(Xdata, Ydata, start_idxs, end_idxs, start_range, end_range, direction='both', plot_switch=True, **kwargs):
     '''
     Computes the slope of a signal around array of points
     
@@ -730,6 +730,8 @@ def slopes(Xdata, Ydata, start_idxs, end_idxs, start_range, end_range, plot_swit
         'start_idxs', 'end_idxs': array-like of indexes where to compute the slopes. Must have the same lenght
         'start_range': half of the number of points used for the linear fit on start points
         'end_range': half of the number of points used for the linear fit on end points
+        
+        'direction': 'internal', 'external' or 'both'
         
         'plot_switch': toggle plots
         
@@ -760,8 +762,15 @@ def slopes(Xdata, Ydata, start_idxs, end_idxs, start_range, end_range, plot_swit
         ax.set_ylabel(ylabel)
     
     for n_start, n_end in list(zip(start_idxs,end_idxs)):
-        x = Xdata[max(n_start-start_range, 0):min(n_start+start_range, len(Xdata))]
-        y = Ydata[max(n_start-start_range, 0):min(n_start+start_range, len(Ydata))]
+        if direction == 'internal':
+            x = Xdata[n_start : min(n_start+start_range + 1, len(Xdata))]
+            y = Ydata[n_start : min(n_start+start_range + 1, len(Ydata))]
+        elif direction == 'external':
+            x = Xdata[max(n_start-start_range, 0) : n_start + 1]
+            y = Ydata[max(n_start-start_range, 0) : n_start + 1]        
+        else:
+            x = Xdata[max(n_start-start_range, 0) : min(n_start+start_range + 1, len(Xdata))]
+            y = Ydata[max(n_start-start_range, 0) : min(n_start+start_range + 1, len(Ydata))]
         popt, pcov = optim.curve_fit(lin_func, x, y)
         slope_start.append(popt[0])
         #example plot
@@ -769,8 +778,15 @@ def slopes(Xdata, Ydata, start_idxs, end_idxs, start_range, end_range, plot_swit
             fit_curve = lin_func(x,*popt)
             ax.plot(x, fit_curve, color='green')
 
-        x = Xdata[n_end-end_range:n_end+end_range]
-        y = Ydata[n_end-end_range:n_end+end_range]
+        if direction == 'internal':
+            x = Xdata[n_end : min(n_end+end_range + 1, len(Xdata))]
+            y = Ydata[n_end : min(n_end+end_range + 1, len(Ydata))]
+        elif direction == 'external':
+            x = Xdata[max(n_end-end_range, 0) : n_end + 1]
+            y = Ydata[max(n_end-end_range, 0) : n_end + 1]        
+        else:
+            x = Xdata[max(n_end-end_range, 0) : min(n_end+end_range + 1, len(Xdata))]
+            y = Ydata[max(n_end-end_range, 0) : min(n_end+end_range + 1, len(Ydata))]
         popt, pcov = optim.curve_fit(lin_func, x, y)
         slope_end.append(popt[0])
         
