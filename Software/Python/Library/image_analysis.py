@@ -127,7 +127,14 @@ def subtract_mean(arrays, mean_array, negative=False, batch_size=100, verbose=Fa
     if verbose:
         print('concatenating')
     
-    return np.concatenate(diffs)
+    diffs = np.concatenate(diffs)
+    
+    if verbose:
+        print('\nDONE!',end='')
+        if len(diffs) > 500:
+            print(' (Phew that was a huge array, you are a kernel serial killer)')
+    
+    return diffs
     
 
 def preprocess(array_sub,rotation=35,filter_size=0, new_shape=(960,1600)):
