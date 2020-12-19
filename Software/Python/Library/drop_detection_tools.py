@@ -230,7 +230,7 @@ def rectify_new(signal, xrange, xdata=None, ignore_bias=-1, manual_thr=-np.inf, 
 
 
 # FFT FILTERING 
-def FFT_cropping(signal, Xdata=None, min_freq=1, max_freq=None, plot_switch=True):
+def FFT_cropping(signal, Xdata=None, min_freq=1, max_freq=None, plot_switch=True, Xmin=None, Xmax=None):
    
     '''
     Makes the fft, crops it between 'min_freq' and 'max_freq' and then returns the ifft.
@@ -281,9 +281,11 @@ def FFT_cropping(signal, Xdata=None, min_freq=1, max_freq=None, plot_switch=True
         axs[1].plot(Xdata, signal,   color='blue', label= "original signal")
         axs[1].set_ylabel('Voltage [V]')
         axs[1].set_xlabel(xlabel)
+        if not (Xmin is None or Xmax is None):
+            axs[1].set_xlim(Xmin, Xmax)
         axs2 = axs[1].twinx() 
-        axs2.tick_params(axis = 'y', labelcolor = "red")
-        axs2.plot(Xdata, sig_high, color='red',  label= "cropped signal")
+        axs2.tick_params(axis = 'y', labelcolor = "orange")
+        axs2.plot(Xdata, sig_high, color='orange',  label= "cropped signal")
         axs2.set_ylabel('Voltage [V]')
         legend = fig.legend(['original signal','cropped signal'], loc='best')
     
