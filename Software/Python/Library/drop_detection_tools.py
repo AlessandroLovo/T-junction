@@ -47,11 +47,13 @@ def read_LV(folder, filename, plot_switch=True):
     if plot_switch:
         fig, axs = plt.subplots(nrows=2, ncols=1, figsize=(15,6))
         axs[0].plot(t, sig1, color='blue', label= "signal 1")
+        axs[0].set_xlabel('Time [s]')
         axs[0].set_ylabel('Voltage [V]')
         axs[1].plot(t, sig2, color='green', label= "signal 2")
         axs[1].set_ylabel('Voltage [V]')
         axs[1].set_xlabel('Time [s]')
         fig.legend(loc='best')
+        fig.tight_layout()
     
     return sig1, sig2, t
 
@@ -170,7 +172,6 @@ def rectify_new(signal, xrange, xdata=None, ignore_bias=-1, manual_thr=-np.inf, 
     # Plots ---------------------------------------------------
     fig1, fig2 = None, None
     if plot_switch:
-        
         y_name = 'y'
         if ylabel is not None:
             y_name = ylabel[0]
@@ -288,7 +289,8 @@ def FFT_cropping(signal, Xdata=None, min_freq=1, max_freq=None, plot_switch=True
         axs2.plot(Xdata, sig_high, color='orange',  label= "cropped signal")
         axs2.set_ylabel('Voltage [V]')
         legend = fig.legend(['original signal','cropped signal'], loc='best')
-    
+        fig.tight_layout()
+        
     return sig_high
 
 
@@ -421,6 +423,8 @@ def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=3, c01=None, c02=Non
         axes[1].set_title("Signal with thresholds")
         axes[1].set_xlabel(xlabel)
         axes[1].set_ylabel(ylabel)
+        
+        fig.tight_layout()
         
     if thr_low > thr_high:
         print('WARNING: thr_low > thr_high')
@@ -748,7 +752,7 @@ def slopes(Xdata, Ydata, start_idxs, end_idxs, start_range, end_range, direction
     '''
     xlabel = kwargs.pop('xlabel', None)
     ylabel = kwargs.pop('ylabel', None)
-    figsize = kwargs.pop('figsize', (13, 6))
+    figsize = kwargs.pop('figsize', (15, 6))
     
 
     def lin_func(x,a,b):
@@ -795,6 +799,7 @@ def slopes(Xdata, Ydata, start_idxs, end_idxs, start_range, end_range, direction
         if plot_switch:
             fit_curve = lin_func(x,*popt)
             ax.plot(x, fit_curve, color='red')
+            fig.tight_layout()
 
             
     return np.array(slope_start), np.array(slope_end)
