@@ -1,0 +1,10 @@
+file containing parameters from fit: center_1, sigma_1, center_2, sigma_2
+spatial size wide (mm)	8.203+/-0.012	0.320+/-0.012	8.252+/-0.033	0.513+/-0.033
+spatial size narrow (mm)	6.338+/-0.009	0.389+/-0.009	6.496+/-0.031	0.480+/-0.031
+temporal size wide (s)	3.627+/-0.009	0.138+/-0.009	3.614+/-0.007	0.149+/-0.007
+temporal size narrow (s)	2.794+/-0.004	0.112+/-0.004	2.860+/-0.006	0.137+/-0.006
+temporal distance wide (mm)	0.9365+/-0.0029	0.0679+/-0.0029	0.919+/-0.004	0.067+/-0.004
+temporal distance narrow (mm)	1.7467+/-0.0035	0.1206+/-0.0035	1.693+/-0.005	0.096+/-0.005
+period wide (s)	9.362+/-0.032	0.226+/-0.032	9.310+/-0.028	0.172+/-0.028
+period narrow (s)	9.46+/-0.04	0.33+/-0.04	9.403+/-0.033	0.321+/-0.033
+mean velocity wide, narrow (mm/s)	2.35077+/-0.00007	2.34935+/-0.00022
