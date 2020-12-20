@@ -714,6 +714,7 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
             plt.plot(thr_high*np.ones(len(Xdata)), color='yellow', label = "thr. high")
             plt.plot(thr_low *np.ones(len(Xdata)), color='cyan',   label = "thr. low")
             plt.show()
+        fig.tight_layout()
 
          
     if not return_indexes: #         Number acquisition -> time [s] conversion

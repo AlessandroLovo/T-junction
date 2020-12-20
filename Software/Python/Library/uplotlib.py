@@ -1,8 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
 from tqdm import tqdm
 import uncertainties as unc
 from scipy import stats
+from lmfit.models import GaussianModel
 
 
 def plot(*args, ax=None, **kwargs):
@@ -104,3 +106,89 @@ class ExtendedKDE():
             plt.plot(points,values, **kwargs)
 
         return points, values
+    
+
+    
+def side_hist_plot(xdata, ydata, bins=30, external_axes=None, **kwargs):
+    '''
+    Makes a plot of 'ydata' vs 'xdata' with a kde plot of 'ydata' on its right.
+    
+    Params:
+        'xdata': array-like
+        'ydata': array-like of ufloats
+        'bins': number of points for the kde plot
+        'external_axes': tupple of size 2, external axes on which to do the plot
+        
+        **kwargs:
+            figsize
+            xlabel
+            ylabel
+            title
+            
+            label: label to create a legend in the plot
+            fit_color: color of the fit line
+            fit_linestyle
+            
+    Returns:
+        fig: plt.figure
+        axes: (ax_plot, ax_hist)
+        fit_params: array of ufloats: [center, sigma] of the gaussian used for the fit.
+    '''
+    
+    figsize = kwargs.pop('figsize', (10,7))
+    xlabel = kwargs.pop('xlabel', None)
+    ylabel = kwargs.pop('ylabel', None)
+    title = kwargs.pop('title', None)
+    
+    label = kwargs.pop('label', None)
+    fit_color = kwargs.pop('fit_color', 'red')
+    fit_linestyle = kwargs.pop('fit_linestyle', None)
+    
+    
+    
+    fig = None
+    ax_plot = None
+    ax_hist = None
+    
+    if external_axes is None:   
+        fig = plt.figure(figsize=figsize)
+        gs = GridSpec(4,5)
+
+        ax_plot = fig.add_subplot(gs[:,0:3])
+        ax_hist = fig.add_subplot(gs[:,3:])
+    
+    else:
+        ax_plot, ax_hist = external_axes
+        fig = ax_plot.figure
+    
+    # plot
+    plot(xdata, ydata, ax=ax_plot, label=label, **kwargs)
+    if label is not None:
+        ax_plot.legend()
+    if xlabel is not None:
+        ax_plot.set_xlabel(xlabel)
+    if ylabel is not None:
+        ax_plot.set_ylabel(ylabel)
+    if title is not None:
+        ax_plot.set_title(title)
+        
+    # hist
+    kernel = ExtendedKDE(ydata)
+    
+    x1,f1 = kernel.plot(points=bins, xrange=ax_plot.get_ylim(), ax=ax_hist, switch_xy=True, **kwargs)
+    
+    plt.setp(ax_hist.get_yticklabels(), visible=False) #Turn off tick labels
+    
+    # gaussian fit
+    mod1 = GaussianModel(prefix='g1_')
+    pars1 = mod1.guess(f1, x=x1)
+    out1 = mod1.fit(f1, pars1, x=x1)
+    ax_hist.plot(out1.best_fit, x1, color=fit_color, linestyle=fit_linestyle)
+    
+    # get fit parameters
+    dist1 = unc.ufloat(out1.params['g1_center'].value, out1.params['g1_center'].stderr)
+    sigma_dist1 = unc.ufloat(out1.params['g1_sigma'].value, out1.params['g1_sigma'].stderr)
+    
+    fit_params = np.array([dist1, sigma_dist1])
+    
+    return fig, (ax_plot, ax_hist), fit_params
