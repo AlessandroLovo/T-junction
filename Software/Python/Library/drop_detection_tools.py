@@ -652,6 +652,24 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
             if keep_invalid:
                 print("Couldn't find wide start, inserting a fake one")
             wide_start.append(start - 1)
+        
+        if len(wide_end) >= 1:
+            if wide_start[-1] == wide_end[-1]:
+                print(Xdata[start],'s: Missed previous wide end: trying to adjust')
+                
+                start_idx = drop_end[i - 1]
+                end_idx = wide_start[-1]
+                
+                change_sign = 0
+                old_der = -1
+                for j in range(start_idx, end_idx):
+                    der = Ydata[j + 1] - Ydata[j]
+                    if np.sign(der) != np.sign(old_der):
+                        change_sign += 1
+                    old_der = der
+                    if change_sign == 2:
+                        wide_end[-1] = j
+                        break
                 
         if b>a: print(Xdata[start],'s: WRONG WIDE DROP DETECTION')
         
