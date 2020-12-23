@@ -640,12 +640,12 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
         #print(start,end)
         if len(spike_start[spike_start<start])>= 1 + backward_skip:
             if backward_skip > 0:
-                a_start = spike_start[spike_start<start][-(1 + backward_skip)]
-                a_end = spike_start[spike_start<start][-(backward_skip)] - 1
+                a_start = spike_start[spike_start<=start][-(1 + backward_skip)]
+                a_end = spike_start[spike_start<=start][-(backward_skip)] - 1
                 peak_idx = np.argmax(Ydata[a_start:a_end])
                 a = a_start + peak_idx
             else:
-                a = spike_start[spike_start<start][-(1 + backward_skip)]
+                a = spike_start[spike_start<=start][-(1 + backward_skip)]
             wide_start.append(a)
         else:
             invalid_is.append(i)
@@ -675,12 +675,12 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
         
         if len(spike_end[spike_end>end])>= 1 + forward_skip:
             if forward_skip > 0:
-                b_start = spike_end[spike_end>end][forward_skip - 1] + 1
-                b_end = spike_end[spike_end>end][forward_skip]
+                b_start = spike_end[spike_end>=end][forward_skip - 1] + 1
+                b_end = spike_end[spike_end>=end][forward_skip]
                 peak_idx = np.argmax(Ydata[b_start:b_end])
                 b = b_start + peak_idx
             else:
-                b = spike_end[spike_end>end][forward_skip]
+                b = spike_end[spike_end>=end][forward_skip]
             wide_end.append(b)
         else:
             if i not in invalid_is:
