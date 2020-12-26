@@ -669,6 +669,7 @@ class Channel_analyzer():
                     remove(self.u_border_on_ax)
                     remove(self.l_border_on_ax)
                     self.shown_borders = not self.shown_borders
+                    ax.set_title(None)
                     
                 else:
                     # sort the points
@@ -691,6 +692,7 @@ class Channel_analyzer():
                     self.l_border_on_ax, = ax.plot(xs,lower_ys,color='yellow')
                     
                     self.shown_borders = not self.shown_borders
+                    ax.set_title(f'thickness = {self.thickness}')
                     
             # increase thickness of the borders
             if event.key == 't':
@@ -705,6 +707,7 @@ class Channel_analyzer():
                     remove(self.u_border_on_ax)
                     self.u_border_on_ax, = ax.plot(xs,upper_ys,color='yellow')
                     self.l_border_on_ax, = ax.plot(xs,lower_ys,color='yellow')
+                    ax.set_title(f'thickness = {self.thickness}')
                     
             # decrease thickness of the borders
             if event.key == 'y':
@@ -719,6 +722,7 @@ class Channel_analyzer():
                     remove(self.u_border_on_ax)
                     self.u_border_on_ax, = ax.plot(xs,upper_ys,color='yellow')
                     self.l_border_on_ax, = ax.plot(xs,lower_ys,color='yellow')
+                    ax.set_title(f'thickness = {self.thickness}')
                      
         cid = fig.canvas.mpl_connect('button_press_event', onclick)
         cid2 = fig.canvas.mpl_connect('key_press_event', onpress)
