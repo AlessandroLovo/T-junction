@@ -686,7 +686,7 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
             if i not in invalid_is:
                 invalid_is.append(i)
             if keep_invalid:
-                print("Couldn't find wide end, inserting a fake one")
+                print(Xdata[end], "s: Couldn't find wide end, inserting a fake one")
             wide_end.append(end + 1)
     
     # removing invalid drops
@@ -743,6 +743,159 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
     
         
     return np.array(narrow_start), np.array(narrow_end), np.array(wide_start), np.array(wide_end)
+
+
+# manually correct the position of the edges
+class DropEdgeCorrector():
+    '''
+    Allows to interactively correct the position of the drop edges in index form.
+    To do so call the object with arguments Xdata and Ydata and use the interactive plot that will appear.
+    You NEED %matplotlib notebook.
+    Once you have finished modifying the edges just use object.drop_edges to access the corrected drop_edges
+    
+    Controls:
+        Right click on the right of an edge to select it.
+        Press:
+            f: to select the next edge
+            b: to select the previous edge
+            
+            F: to select the next edge in the subset of the ones that have already been modified
+            B: to select the previous edge in the subset of the ones that have already been modified
+            
+            a: to move the selected edge to the left by 1 data point
+            A: to move the selected edge to the left by 10 data points
+            d: to move the selected edge to the right by 1 data point
+            D: to move the selected edge to the right by 10 data points
+            x: to reset the selected edge to its original position
+            
+            o: zoom on image
+            c: go back to previous view
+            v: go forward to next view
+            p: move the field of view in a zoomed view
+
+            q: stop the interaction with the figure
+    '''
+    def __init__(self, drop_edges):
+        self._drop_edges = np.concatenate(drop_edges)
+        
+        self.color_list = ['lime', 'green', 'red', 'orange']
+        self.lines_on_ax = [None]
+        self.corrections = np.array([]) # index, old_value, new_value
+        self.current_index = None
+        self.hyper_index = None
+        
+    @property
+    def drop_edges(self):
+        return self._drop_edges.reshape((len(self._drop_edges)//4, 4))
+    
+    def __call__(self,Xdata,Ydata, **kwargs):
+        figsize = kwargs.pop('figsize', (9,6))
+        xlim = kwargs.pop('xlim', None)
+        
+        fig, ax = plt.subplots(figsize=figsize)
+        
+        
+        ax.plot(Xdata, Ydata, alpha=0.7)
+        ax.set_ylim(*ax.get_ylim())
+        
+        for i in range(4):
+            ax.vlines(Xdata[self._drop_edges[i::4]], *ax.get_ylim(), color=self.color_list[i], alpha=0.3)
+        ax.set_xlim(xlim)
+            
+        def remove(obj):
+            if obj:
+                if obj.axes:
+                    obj.remove()
+        
+        def plot_line(linestyle='dashed'):
+            ax.set_title(f'Selected point @ x = {Xdata[self._drop_edges[self.current_index]] :.2f}')
+            return ax.vlines(Xdata[self._drop_edges[self.current_index]], *ax.get_ylim(),
+                             color=self.color_list[self.current_index%4], linestyle=linestyle)
+        
+        def onclick(event):
+            # works with right click: click on the right of the point to highlight
+            if event.button == 3:
+                ix = event.xdata
+                
+                self.current_index = np.where(Xdata[self._drop_edges] < ix)[0][-1]
+                remove(self.lines_on_ax[0])
+                self.lines_on_ax[0] = plot_line()
+                
+                # try to synchronize indexes
+                if len(self.corrections) > 0:
+                    l = list(self.corrections[:,0])
+                    if self.current_index in l:
+                        self.hyper_index = l.index(self.current_index)
+                               
+        def onpress(event):
+            # iterate through edges
+            if event.key == 'f' or event.key == 'b':
+                if self.current_index is not None:
+                    self.hyper_index = None
+                    if event.key == 'f':
+                        self.current_index = min(self.current_index + 1, len(self._drop_edges) - 1)
+                    elif event.key == 'b':
+                        self.current_index = max(self.current_index - 1, 0)
+                    remove(self.lines_on_ax[0])
+                    self.lines_on_ax[0] = plot_line()
+                    
+                    # try to synchronize indexes
+                    if len(self.corrections) > 0:
+                        l = list(self.corrections[:,0])
+                        if self.current_index in l:
+                            self.hyper_index = l.index(self.current_index)
+            
+            # iterate throuh corrected edges
+            if event.key == 'F' or event.key == 'B':
+                if self.hyper_index is not None:
+                    if event.key == 'F':
+                        self.hyper_index = (self.hyper_index + 1) % len(self.corrections)
+                    elif event.key == 'B':
+                        self.hyper_index = (self.hyper_index + 1) % len(self.corrections)
+                    self.current_index = self.corrections[self.hyper_index,0]
+                    remove(self.lines_on_ax[0])
+                    self.lines_on_ax[0] = plot_line()
+                elif len(self.corrections) > 0:
+                    self.hyper_index = 0
+                                          
+            # correct selected edge position
+            if event.key == 'a' or event.key == 'A' or event.key == 'd' or event.key == 'D':
+                if self.current_index is not None:
+                    if len(self.corrections) == 0 or not self.current_index in self.corrections[:,0]:
+                        self.corrections = np.vstack([*self.corrections,
+                                                       [self.current_index,
+                                                        self._drop_edges[self.current_index],
+                                                        self._drop_edges[self.current_index]]])
+                        remove(self.lines_on_ax[0])
+                        self.lines_on_ax[0] = None
+                        self.lines_on_ax.append(None)
+                        self.hyper_index = len(self.corrections) - 1
+                    
+                    if event.key == 'a':
+                        self._drop_edges[self.current_index] -= 1
+                    elif event.key == 'A':
+                        self._drop_edges[self.current_index] -= 10
+                    elif event.key == 'd':
+                        self._drop_edges[self.current_index] += 1
+                    elif event.key == 'D':
+                        self._drop_edges[self.current_index] += 10
+                    self.corrections[self.hyper_index, 2] = self._drop_edges[self.current_index]
+                    remove(self.lines_on_ax[self.hyper_index + 1])
+                    self.lines_on_ax[self.hyper_index + 1] = plot_line(linestyle='dotted')
+                    
+            # reset selected edge position to the original one
+            if event.key == 'x':
+                if self.hyper_index is not None:
+                    remove(self.lines_on_ax[self.hyper_index + 1])
+                    self.lines_on_ax[self.hyper_index + 1] = None
+                    self._drop_edges[self.current_index] = self.corrections[self.hyper_index,1]
+                    remove(self.lines_on_ax[0])
+                    self.lines_on_ax[0] = None
+
+                    
+
+        cid = fig.canvas.mpl_connect('button_press_event', onclick)
+        cid2 = fig.canvas.mpl_connect('key_press_event', onpress)
 
 
 # SLOPE FUNCTION 

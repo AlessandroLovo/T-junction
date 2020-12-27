@@ -160,7 +160,7 @@ def preprocess(array_sub,rotation=35,filter_size=0, new_shape=(960,1600)):
     
 
 
-class Channel_analyzer():
+class ChannelAnalyzer():
     
     def __init__(self):
         
