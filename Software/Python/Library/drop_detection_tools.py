@@ -250,7 +250,7 @@ def FFT_cropping(signal, Xdata=None, min_freq=1, max_freq=None, plot_switch=True
      
     xlabel = "Time [s]"
     if Xdata is None:
-        Xdata  = np.arange(len(Ydata))
+        Xdata  = np.arange(len(signal))
         xlabel = "Measure index"
         
     # FFT of signal 
@@ -320,16 +320,12 @@ def thr_searcher(Ydata, nbins=20, low_sigmas=3, high_sigmas=3, c01=None, c02=Non
         thr_low, thr_high
     '''
     
-    xlabel = kwargs.pop('xlabel',None)
-    ylabel = kwargs.pop('ylabel',None)
+    xlabel = kwargs.pop('xlabel','Position [mm]')
+    ylabel = kwargs.pop('ylabel','Luminosity')
     ymin = kwargs.pop('ymin', None)
     ymax = kwargs.pop('ymax', None)
     figsize = kwargs.pop('figsize', (15, 6))
     
-    if xlabel is None:
-        xlabel = 'Position [mm]'
-    if ylabel is None:
-        ylabel = 'Luminosity'
     
     if plot_switch:
         fig, axes = plt.subplots(nrows=1, ncols=2, figsize=figsize)
