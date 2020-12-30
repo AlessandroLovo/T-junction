@@ -52,7 +52,7 @@ def plot(*args, ax=None, **kwargs):
 
 
 class ExtendedKDE():
-    def __init__(self, xs):
+    def __init__(self, xs, ignore_Dirac_deltas=True):
         x_d = np.array([[x.n, x.s] for x in xs])
         x_val = x_d[:,0]
         x_err = x_d[:,1]
@@ -61,8 +61,13 @@ class ExtendedKDE():
         max_idx = np.argmax(x_val)
         self.min_x = x_val[min_idx] - 2*x_err[min_idx]
         self.max_x = x_val[max_idx] + 2*x_err[max_idx]
+        self.gaussians = None
         
-        self.gaussians = [stats.norm(*p) for p in x_d]
+        if ignore_Dirac_deltas:
+            self.gaussians = [stats.norm(*p) for p in x_d if p[1] > 0]
+        
+        else:
+            self.gaussians = [stats.norm(*p) for p in x_d]
         
     def __call__(self, point):
         return np.sum([g.pdf(point) for g in self.gaussians])
@@ -129,6 +134,8 @@ def side_hist_plot(xdata, ydata, bins=30, external_axes=None, **kwargs):
             fit_color: color of the fit line
             fit_linestyle
             
+            adjust_ylims: bool. If True plot and histogram will have the same ylims
+            
     Returns:
         fig: plt.figure
         axes: (ax_plot, ax_hist)
@@ -143,6 +150,8 @@ def side_hist_plot(xdata, ydata, bins=30, external_axes=None, **kwargs):
     label = kwargs.pop('label', None)
     fit_color = kwargs.pop('fit_color', 'red')
     fit_linestyle = kwargs.pop('fit_linestyle', None)
+    
+    adjust_ylims = kwargs.pop('adjust_ylims', False)
     
     
     
@@ -171,6 +180,8 @@ def side_hist_plot(xdata, ydata, bins=30, external_axes=None, **kwargs):
         ax_plot.set_ylabel(ylabel)
     if title is not None:
         ax_plot.set_title(title)
+    if adjust_ylims:
+        ax_hist.set_ylim(*ax_plot.get_ylim())
         
     # hist
     kernel = ExtendedKDE(ydata)
