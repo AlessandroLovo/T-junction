@@ -656,7 +656,7 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
             wide_start.append(start - 1)
         
         if len(wide_end) >= 1:
-            if wide_start[-1] >= wide_end[-1] or use_derivative:
+            if wide_start[-1] == wide_end[-1] or use_derivative:
                 print(Xdata[start],'s: Missed previous wide end: trying to adjust')
                 
                 start_idx = drop_end[i - 1]
