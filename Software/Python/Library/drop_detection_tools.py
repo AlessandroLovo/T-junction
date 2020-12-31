@@ -519,7 +519,7 @@ def drop_det(Xdata, Ydata, thr_low, thr_high, plot_switch=True, **kwargs):
 ## new version
 # print(bounds) #new drop detection: narrow_start, narrow_end, wide_start, wide end
 def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_skip = 1, use_derivative=False, return_indexes=True, keep_invalid=True,
-                 plot_switch=True, **kwargs):
+                 plot_switch=True, debug=False, **kwargs):
     
     '''
     Description:
@@ -582,8 +582,11 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
     for i in range(len(Ydata)-1):
         
         if bool_low[i]==True and bool_high[i]==False and bool_low[i+1]==False:
-            if ascent_start[-1] < narrow_end[-1] and i > narrow_end[-1]:
-                ascent_start.append(i)
+            if i > narrow_end[-1]:
+                if ascent_start[-1] < narrow_end[-1]:
+                    ascent_start.append(i)
+                else:
+                    ascent_start[-1] = i
                 
         elif bool_low[i]==False and bool_high[i]==True and bool_high[i+1]==False  :
             if i > ascent_start[-1]:
@@ -601,15 +604,27 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
     
     if narrow_start[0] < ascent_start[0]: # first droplet has no ascent
         narrow_start = narrow_start[1:]
+        
+    if drop_end[0]<narrow_start[0]:
+        drop_end=drop_end[1:]
+    
+    if narrow_end[0] < narrow_start[0]:
+        narrow_end = narrow_end[1:]
     
     #print(len(narrow_start), len(narrow_end))
     # Cropping
-    if len(narrow_start) > len(narrow_end):
-        narrow_start = narrow_start[:-1] 
-    print(len(narrow_start), len(narrow_end))
+    if len(ascent_start) > len(drop_end):
+        ascent_start = ascent_start[:-1]
+    if len(narrow_start) > len(drop_end):
+        narrow_start = narrow_start[:-1]
+    if len(narrow_end) > len(drop_end):
+        narrow_end = narrow_end[:-1]
+        
+    print(len(narrow_start), len(narrow_end), len(ascent_start), len(drop_end))
     
-    if drop_end[0]<narrow_start[0]:
-        drop_end=drop_end[1:]
+    
+    
+    
                 
     #find wide_start and wide_end. Only need low thr:
     #check whenever signal simply overcomes low threshold and stores those indices
@@ -630,6 +645,33 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
     spike_start = np.array(spike_start)
     spike_end = np.array(spike_end)
     
+    if debug:
+        fig,ax = plt.subplots(figsize=figsize)
+        plt.plot(Xdata, Ydata, **kwargs)
+        
+        if ymin is None or ymax is None:
+            ymin, ymax = ax.get_ylim()
+        else:
+            plt.ylim(ymin, ymax)
+            
+        plt.hlines(thr_high, *ax.get_xlim(), color='yellow', label = "thr. high")
+        plt.hlines(thr_low, *ax.get_xlim(), color='cyan',   label = "thr. low")
+        
+        plt.vlines(Xdata[narrow_start], ymin, ymax, color='green',  label="start (narrow)")
+        plt.vlines(Xdata[narrow_end],   ymin, ymax, color='red',    label="end (narrow)")
+        #plt.vlines(Xdata[wide_start],   ymin, ymax, color='lime',   label="start (wide)")
+        #plt.vlines(Xdata[wide_end],     ymin, ymax, color='orange', label="end (wide)")
+        
+        plt.vlines(Xdata[ascent_start], ymin, ymax, color='blue')
+        plt.vlines(Xdata[drop_end], ymin, ymax, color='pink')
+        
+        #plt.vlines(Xdata[spike_start], ymin, ymax, color='black', linestyle='dashed')
+        #plt.vlines(Xdata[spike_end], ymin, ymax, color='brown', linestyle='dashed')
+        
+        
+        
+        
+    
     b=0
     a=0
     
@@ -640,24 +682,40 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
         if len(spike_start[spike_start<start])>= 1 + backward_skip:
             if backward_skip > 0:
                 a_start = spike_start[spike_start<=start][-(1 + backward_skip)]
-                a_end = spike_start[spike_start<=start][-(backward_skip)] - 1
-                peak_idx = np.argmax(Ydata[a_start:a_end])
-                a = a_start + peak_idx
+                if use_derivative or (i > 0 and a_start < drop_end[i - 1]):
+                    print(Xdata[a_start], ' cannot properly find wide start: using derivative')
+                    j = ascent_start[i]
+                    change_sign = 0
+                    old_der = 1
+                    der = 0
+                    while(change_sign < 2*backward_skip):
+                        der = Ydata[j] - Ydata[j-1]
+                        if np.sign(der) != np.sign(old_der):
+                            change_sign += 1
+                        old_der = der
+                        j -= 1
+                    a = j + 1
+                    if a < drop_end[i - 1]:
+                        print('FAILED to adjust: overlapping droplets')
+                else:
+                    a_end = spike_start[spike_start<=start][-(backward_skip)] - 1
+                    peak_idx = np.argmax(Ydata[a_start:a_end])
+                    a = a_start + peak_idx
             else:
-                a = spike_start[spike_start<=start][-(1 + backward_skip)]
+                a = ascent_start[i]
             if a>narrow_start[i] :
-                print('wide_start > narrow_start', Xdata[a])
+                print(Xdata[a], ' wide_start > narrow_start')
                 
             wide_start.append(a)
         else:
             invalid_is.append(i)
             if keep_invalid:
-                print("Couldn't find wide start, inserting a fake one")
+                print(Xdata[start]," Couldn't find wide start, inserting a fake one")
             wide_start.append(start - 1)
         
         if len(wide_end) >= 1:
-            if wide_start[-1] == wide_end[-1] or use_derivative:
-                print(Xdata[start],'s: Missed previous wide end: trying to adjust')
+            if wide_start[-1] <= wide_end[-1] or use_derivative or wide_end[-1] is None:
+                print(Xdata[start],' missed previous wide end: adjusting with derivative')
                 
                 start_idx = drop_end[i - 1]
                 end_idx = wide_start[-1]
@@ -669,27 +727,31 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
                     if np.sign(der) != np.sign(old_der):
                         change_sign += 1
                     old_der = der
-                    if change_sign == 2:
+                    if change_sign == 2*forward_skip:
                         wide_end[-1] = j
                         break
             
                 
-        if b>a: print(Xdata[start],'s: WRONG WIDE DROP DETECTION')
+        if b>a: print(Xdata[start],' WRONG WIDE DROP DETECTION')
         
         if len(spike_end[spike_end>end])>= 1 + forward_skip:
             if forward_skip > 0:
                 b_start = spike_end[spike_end>=end][forward_skip - 1] + 1
                 b_end = spike_end[spike_end>=end][forward_skip]
                 peak_idx = np.argmax(Ydata[b_start:b_end])
-                b = b_start + peak_idx
+                if peak_idx in [b_start, b_end - 1]:
+                    print(Xdata[b_start], ' wide end found at domain edge, adjusting')
+                    b = None
+                else:
+                    b = b_start + peak_idx
             else:
-                b = spike_end[spike_end>=end][forward_skip]
+                b = drop_end[i]
             wide_end.append(b)
         else:
             if i not in invalid_is:
                 invalid_is.append(i)
             if keep_invalid:
-                print(Xdata[end], "s: Couldn't find wide end, inserting a fake one")
+                print(Xdata[end], " Couldn't find wide end, inserting a fake one")
             wide_end.append(end + 1)
     
     # removing invalid drops
@@ -705,7 +767,11 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
         wide_start = wide_start[:-1] 
     if len(narrow_start)>len(wide_start):
         narrow_start = narrow_start[:-1] 
-        narrow_end = narrow_end[:-1] 
+        narrow_end = narrow_end[:-1]
+        
+    if wide_end[-1] is None:
+        print('last wide end is invalid. Please adjust manually')
+        wide_end[-1] = narrow_end[-1] + 1
         
     print(len(narrow_start), len(narrow_end))
     
@@ -732,8 +798,8 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
             plt.ylabel(ylabel)
             plt.xlabel(xlabel)
             plt.xlim(j*xrange,(j+1)*xrange)
-            plt.plot(thr_high*np.ones(len(Xdata)), color='yellow', label = "thr. high")
-            plt.plot(thr_low *np.ones(len(Xdata)), color='cyan',   label = "thr. low")
+            plt.hlines(thr_high, *ax.get_xlim(), color='yellow', label = "thr. high")
+            plt.hlines(thr_low, *ax.get_xlim(), color='cyan',   label = "thr. low")
             plt.show()
         fig.tight_layout()
 
