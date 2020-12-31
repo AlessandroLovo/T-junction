@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
+import pandas as pd
 from tqdm import tqdm
 import uncertainties as unc
 from scipy import stats
@@ -203,3 +204,36 @@ def side_hist_plot(xdata, ydata, bins=30, external_axes=None, **kwargs):
     fit_params = np.array([dist1, sigma_dist1])
     
     return fig, (ax_plot, ax_hist), fit_params
+
+
+
+def df2latex(df, float_digits=2, ufloat_digits=1):
+    '''
+    Creates a latex table from a pandas.DataFrame object that can contain ufloat values
+
+    Params:
+        df : pandas.DataFrame
+        float_digits: int, number of decimal digits for float values
+        ufloat_digits: int, number of significant digits of the error in ufloat values
+    '''
+    
+    for i in range(len(df)):
+        s = ''
+        for key in df.keys():
+            v = df.loc[i][key]
+            
+            if type(v) == str:
+                s += v
+            elif type(v) in [unc.core.Variable, unc.core.AffineScalarFunc]:
+                s += f'{v:.{ufloat_digits}uL}'
+            elif type(v) in [int, np.int64]:
+                s += str(v)
+            else:
+                s += f'{v:.{float_digits}f}'
+                
+            s += ' & '
+            
+        s += '\b\b\b\\\\'
+        print(s)
+                
+                    
