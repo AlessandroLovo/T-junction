@@ -518,7 +518,7 @@ def drop_det(Xdata, Ydata, thr_low, thr_high, plot_switch=True, **kwargs):
 
 ## new version
 # print(bounds) #new drop detection: narrow_start, narrow_end, wide_start, wide end
-def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_skip = 1, return_indexes=True, keep_invalid=True,
+def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_skip = 1, use_derivative=False, return_indexes=True, keep_invalid=True,
                  plot_switch=True, **kwargs):
     
     '''
@@ -607,6 +607,9 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
     if len(narrow_start) > len(narrow_end):
         narrow_start = narrow_start[:-1] 
     print(len(narrow_start), len(narrow_end))
+    
+    if drop_end[0]<narrow_start[0]:
+        drop_end=drop_end[1:]
                 
     #find wide_start and wide_end. Only need low thr:
     #check whenever signal simply overcomes low threshold and stores those indices
@@ -642,6 +645,9 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
                 a = a_start + peak_idx
             else:
                 a = spike_start[spike_start<=start][-(1 + backward_skip)]
+            if a>narrow_start[i] :
+                print('wide_start > narrow_start', Xdata[a])
+                
             wide_start.append(a)
         else:
             invalid_is.append(i)
@@ -650,7 +656,7 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
             wide_start.append(start - 1)
         
         if len(wide_end) >= 1:
-            if wide_start[-1] == wide_end[-1]:
+            if wide_start[-1] >= wide_end[-1] or use_derivative:
                 print(Xdata[start],'s: Missed previous wide end: trying to adjust')
                 
                 start_idx = drop_end[i - 1]
@@ -666,6 +672,7 @@ def drop_det_new(Xdata, Ydata, thr_low, thr_high, backward_skip = 1, forward_ski
                     if change_sign == 2:
                         wide_end[-1] = j
                         break
+            
                 
         if b>a: print(Xdata[start],'s: WRONG WIDE DROP DETECTION')
         
