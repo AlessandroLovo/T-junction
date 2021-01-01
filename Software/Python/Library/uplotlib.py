@@ -225,11 +225,11 @@ def df2latex(df, float_digits=2, ufloat_digits=1):
             if type(v) == str:
                 s += v
             elif type(v) in [unc.core.Variable, unc.core.AffineScalarFunc]:
-                s += f'{v:.{ufloat_digits}uL}'
+                s += f'${v:.{ufloat_digits}uL}$'
             elif type(v) in [int, np.int64]:
-                s += str(v)
+                s += f'${v}$'
             else:
-                s += f'{v:.{float_digits}f}'
+                s += f'${v:.{float_digits}f}$'
                 
             s += ' & '
             
