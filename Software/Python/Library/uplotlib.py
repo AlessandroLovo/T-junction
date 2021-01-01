@@ -233,7 +233,7 @@ def df2latex(df, float_digits=2, ufloat_digits=1):
                 
             s += ' & '
             
-        s += '\b\b\b\\\\'
+        s = s[:-2] +  '\\\\'
         print(s)
                 
                     
