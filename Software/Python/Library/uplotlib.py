@@ -14,8 +14,8 @@ def plot(*args, ax=None, **kwargs):
     
     Parameters:
         *args:
-            x: optinal, if given array-like. If it is an array of ufloats xerrorbars are plotted
-            y: array-like. If it is an array of ufloats xerrorbars are plotted
+            x: optional, if given array-like. If it is an array of ufloats, xerrorbars are plotted
+            y: array-like. If it is an array of ufloats yerrorbars are plotted
         
         ax: optional, axis on which to execute the plot
         
@@ -49,6 +49,84 @@ def plot(*args, ax=None, **kwargs):
     if ax is not None:
         return ax.errorbar(x_val, y_val, xerr=x_err, yerr=y_err, **kwargs)
     return plt.errorbar(x_val, y_val, xerr=x_err, yerr=y_err, **kwargs)
+
+
+class DataMisaligner():
+    def __init__(self, x_misalignment=0):
+        self.xm = x_misalignment
+        self.data = []
+        self.data_kwargs = []
+        
+    def add(self, *args, **kwargs):
+        kwargs.pop('ax')
+        if len(args) == 2:
+            xs = args[0]
+            ys = args[1]
+        else:
+            ys = args[0]
+            xs = np.arange(len(ys))
+        
+        if type(xs[0]) == unc.core.Variable or type(xs[0])==unc.core.AffineScalarFunc:
+            x_d = np.array([[x.n, x.s] for x in xs])
+            x_val = x_d[:,0]
+            x_err = x_d[:,1]
+        else:
+            x_val = xs
+            x_err = None
+        if type(ys[0]) == unc.core.Variable or type(ys[0])==unc.core.AffineScalarFunc:
+            y_d = np.array([[y.n, y.s] for y in ys])
+            y_val = y_d[:,0]
+            y_err = y_d[:,1]
+        else:
+            y_val = ys
+            y_err = None
+            
+        self.data.append([x_val, y_val, x_err, y_err])
+        self.data_kwargs.append(kwargs)
+        
+    def plot(self, ax):
+        # find multiplicities of the x coordinate
+        x_values = []
+        multiplicities = []
+        for dataset in self.data:
+            for x_val in dataset[0]:
+                if x_val not in x_values:
+                    x_values.append(x_val)
+                    multiplicities.append(1)
+                else:
+                    multiplicities[x_values.index(x_val)] += 1
+                    
+        # misalign the data
+        misaligned_xs = []
+        current_multiplicities = []
+        current_x_values = []
+        for dataset in self.data:
+            misaligned_xs.append([])
+            for i,x_val in enumerate(dataset[0]):
+                if x_val not in current_x_values:
+                    current_x_values.append(x_val)
+                    current_multiplicities.append(1)
+                else:
+                    current_multiplicities[current_x_values.index(x_val)] += 1
+                    
+                cm = current_multiplicities[current_x_values.index(x_val)]
+                m = multiplicities[current_x_values.index(x_val)]
+                    
+                misaligned_xs[-1].append(x_val + self.xm*(cm - 1 - 0.5*(m - 1)))
+                
+        
+        # plot
+        for i, dataset in enumerate(self.data):
+            _, y_val, x_err, y_err = dataset
+            x_val = misaligned_xs[i]
+            kwargs = self.data_kwargs[i]
+            ax.errorbar(x_val, y_val, xerr=x_err, yerr=y_err, **kwargs)
+            
+        # add vertical lines where data was misaligned
+        ax.vlines([x_values[i] for i,m in enumerate(multiplicities) if m > 1], *ax.get_ylim(), color='black', linestyle='dotted', alpha=0.2)
+        
+        
+                
 
 
 
