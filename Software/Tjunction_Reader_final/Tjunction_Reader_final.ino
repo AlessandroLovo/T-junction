@@ -9,6 +9,7 @@
  *                two voltages and the time of the measures *
  ************************************************************/
 
+
 void setup() {
   Serial.begin(9600);
 }
@@ -22,7 +23,7 @@ void loop() {
   int sensorValue1    = analogRead(A1);                         // reading (sensor 1)
   long CurrentTime     = millis();                               // reading time [ms]
   
-  // Data output
+//   Data output
   Serial.print("A0");
   Serial.println(sensorValue0);
   Serial.print("A1");
